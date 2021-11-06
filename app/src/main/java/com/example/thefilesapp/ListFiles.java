@@ -1,7 +1,5 @@
 package com.example.thefilesapp;
 
-import static com.example.thefilesapp.ListAdapter.gettingName;
-import static com.example.thefilesapp.ListAdapter.gettingName2;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -25,16 +23,38 @@ public class ListFiles extends AppCompatActivity {
 
     public static File[] files;
     public static String path;
-    public static int valuesSize;
-    List values;
+    File directory;
+//    public static int valuesSize;
+//    List values;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_files);
 
-//        innerFiles = MainActivity.files;
+//        if(getIntent().hasExtra("clickedPath")){
+//            path = getIntent().getStringExtra("clickedPath");
+//            Log.d("Intent Path ", "onCreate: "+path);
+//        }
+//        else {
+            path = Environment.getExternalStorageDirectory().toString()+"/Books";
+//            Log.d("Class Path ", "onCreate: "+path);
+//        }
+        getFiles(path);
 
+//        if(files != null) {
+            listAdapter = new ListAdapter(getApplicationContext(),files);
+
+            allRV = findViewById(R.id.allRV);
+            linearLayoutManager = new LinearLayoutManager(getApplicationContext(), RecyclerView.VERTICAL, false);
+            allRV.setLayoutManager(linearLayoutManager);
+            allRV.setAdapter(listAdapter);
+//        }
+//        else{
+//            files.length = 0;
+//        }
+
+        /*
         path = Environment.getExternalStorageDirectory().toString();
 
 //        path = "/storage/emulated/0/Telegram/Telegram Documents";
@@ -48,14 +68,6 @@ public class ListFiles extends AppCompatActivity {
             path = Environment.getExternalStorageDirectory().toString();
         }
 
-/*
-        if(getIntent().hasExtra("path")){
-            path += getIntent().getStringExtra("path");
-        }else{
-            path = path1;
-        }
-*/
-
 
         values = new ArrayList();
         File directory = new File(path);
@@ -68,44 +80,37 @@ public class ListFiles extends AppCompatActivity {
 //                }
             }
             valuesSize = values.size();
-//            Log.d("File Size::", "onCreate: "+files.length);
             Log.d("Size::", "onCreate: "+values.size());
         }
 
-//        File directory = new File(path);
-//        files = directory.listFiles();
-
         listAdapter = new ListAdapter(getApplicationContext(),values);
-//        Log.d("Files", "Size: "+ files.length);
-
-//        Log.d("TAG", "File Size"+(getFiles.length));
 
         allRV = findViewById(R.id.allRV);
         linearLayoutManager = new LinearLayoutManager(getApplicationContext(),RecyclerView.VERTICAL,false);
         allRV.setLayoutManager(linearLayoutManager);
         allRV.setAdapter(listAdapter);
-
+*/
     }
 
-    @Override
-    public void onBackPressed() {
-//        Intent intent = new Intent(getApplicationContext(), ListFiles.class);
-        finish();
-        ListAdapter.isClicked = false;
-//        startActivity(intent);
-    }
+/*
+        @Override
+        public void onBackPressed() {
+            path = "";
+            Log.d("Path", "onCreate: "+path);
+            finish();
+        }
+*/
+    public void getFiles(String path) {
 
-    public void getFiles(){
-        String path = Environment.getExternalStorageDirectory().toString();
-
-        File directory = new File(Environment.getExternalStorageDirectory().toString());
-        File[] files = directory.listFiles();
-
-        Log.d("Files", "Size: "+ files.length);
-        Log.d("Files", "Path: " + path);
-        for (int i = 0; i < files.length; i++)
-        {
-            Log.d("Files", "FileName:" + files[i].getName());
+        directory = new File(path);
+        files = directory.listFiles();
+//        int length = files.length;
+        if(files != null) {
+            Log.d("FileDetails", "Size: " + files.length);
+            Log.d("FileDetails", "Path: " + path);
+            for (int i = 0; i < files.length; i++) {
+                Log.d("FileDetails", "FileName:" + files[i].getName());
+            }
         }
     }
 
