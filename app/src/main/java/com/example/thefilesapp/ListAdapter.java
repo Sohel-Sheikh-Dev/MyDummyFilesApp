@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.MimeTypeMap;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,15 +55,19 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
 //                    Toast.makeText(context.getApplicationContext(), "It is a directory", Toast.LENGTH_SHORT).show();
 //                }
 
-                if ((Files.getFileExtension(getFiles[pos].toString())).equals("pdf")) {
 
                     Intent promptInstall = new Intent(Intent.ACTION_GET_CONTENT);
                     promptInstall.setAction(Intent.ACTION_VIEW);
-                    Uri uri = FileProvider.getUriForFile(context.getApplicationContext(), BuildConfig.APPLICATION_ID + ".provider", getFiles[pos]);
-                    promptInstall.setDataAndType(uri, "application/pdf");
-                    promptInstall.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    final MimeTypeMap mime = MimeTypeMap.getSingleton();
+                    Uri uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", getFiles[pos]);
+                    promptInstall.setDataAndType(uri,mime.getExtensionFromMimeType(Files.getFileExtension(getFiles[pos].toString())) );
                     promptInstall.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(promptInstall);
+                    promptInstall.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    try {
+                        context.startActivity(promptInstall);
+                    }catch (Exception e){
+                        Toast.makeText(context, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+                    }
 /*
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     Uri uri = FileProvider.getUriForFile(context.getApplicationContext(), BuildConfig.APPLICATION_ID + ".provider", getFiles[pos]);
@@ -101,7 +106,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
                     context.startActivity(Intent.createChooser(intent, "Open with..."));
 */
                 }
-
 //                else {
 //                    Toast.makeText(context.getApplicationContext(), "It is a " + Files.getFileExtension(getFiles[pos].toString()) + " type file" + "\nFile: " + (getFiles[pos].toString()), Toast.LENGTH_SHORT).show();
 //                }
@@ -114,7 +118,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
                 context.startActivity(intent);
 
  */
-            }
+            
         });
 
 
