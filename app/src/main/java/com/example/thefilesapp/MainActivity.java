@@ -13,29 +13,27 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.common.io.Files;
+
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-//    public static File[] files;
-//    public static String path;
-
-//    RecyclerView allRV;
-//    ListAdapter listAdapter;
-//    LinearLayoutManager linearLayoutManager;
-
-    RecyclerView allRV;
-    ListAdapter listAdapter;
+    RecyclerView cateRV;
+    MainActivityAdapter mainActivityAdapter;
     LinearLayoutManager linearLayoutManager;
-
-    //    public static File[] files;
-//    public static String path;
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     @Override
@@ -43,52 +41,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        checkStorageAccess();
 
+        mainActivityAdapter = new MainActivityAdapter(getApplicationContext());
 
-
-//        String path = Environment.getExternalStorageDirectory().toString() + "/Download";
-//        getFiles(path);
-
-/*
-        path = Environment.getExternalStorageDirectory().toString();
-
-        if(ListAdapter.isClicked){
-            path += "/Download";
-//            listAdapter.notifyDataSetChanged();
-        }
-
-        if(getIntent().hasExtra("path")){
-            path += getIntent().getStringExtra("path");
-        }else{
-            path = path1;
-        }
-        Log.d("TAG", "onCreate: "+path);
-
-        File directory = new File(path);
-        files = directory.listFiles();
-        Log.d("Files", "Size: "+ files.length);
-
-
-        listAdapter = new ListAdapter(getApplicationContext(),files);
-
-        allRV = findViewById(R.id.allRV);
-        linearLayoutManager = new LinearLayoutManager(getApplicationContext(),RecyclerView.VERTICAL,false);
-        allRV.setLayoutManager(linearLayoutManager);
-        allRV.setAdapter(listAdapter);
-*/
-/*
-        path = Environment.getExternalStorageDirectory().toString();
-        File directory = new File(path);
-        files = directory.listFiles();
-
-        listAdapter = new ListAdapter(getApplicationContext(),files);
-
-        allRV = findViewById(R.id.allRV);
+        cateRV = findViewById(R.id.categories);
         linearLayoutManager = new LinearLayoutManager(getApplicationContext(), RecyclerView.VERTICAL, false);
-        allRV.setLayoutManager(linearLayoutManager);
-        allRV.setAdapter(listAdapter);
-*/
+        cateRV.setLayoutManager(linearLayoutManager);
+        cateRV.setAdapter(mainActivityAdapter);
 
+
+    }
+
+
+
+    @RequiresApi(api = Build.VERSION_CODES.R)
+    private void checkStorageAccess(){
         if (!Environment.isExternalStorageManager()) {
             Intent intent = new Intent();
             intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
@@ -101,19 +69,6 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
 
-
-//                    path = Environment.getExternalStorageDirectory().toString();
-//                    File directory = new File(path);
-//                    files = directory.listFiles();
-//                    Log.d("Files", "Size: "+ files.length);
-//                    for (int i = 0; i < files.length; i++)
-//                    {
-//                        Log.d("Files", "FileName:" + files[i].getName());
-//                    }
-
-
-
-
                     Toast.makeText(MainActivity.this, "Clicked", Toast.LENGTH_SHORT).show();
 
                     Intent intent = new Intent(MainActivity.this, ListFiles.class);
@@ -121,22 +76,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
-
     }
 
 
-    public void getFiles(String path) {
 
-        File directory = new File(path);
-        File[] files = directory.listFiles();
-//        int length = files.length;
-        if (files != null) {
-            Log.d("FileDetails", "Size: " + files.length);
-            Log.d("FileDetails", "Path: " + path);
-            for (int i = 0; i < files.length; i++) {
-                Log.d("FileDetails", "FileName:" + files[i].getName());
-            }
-        }
-    }
 
 }

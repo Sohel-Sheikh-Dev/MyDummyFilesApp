@@ -1,29 +1,49 @@
 package com.example.thefilesapp;
 
 
+import androidx.annotation.LongDef;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.format.Formatter;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.comparator.NameFileComparator;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.comparator.SizeFileComparator;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class ListFiles extends AppCompatActivity {
 
     RecyclerView allRV;
     ListAdapter listAdapter;
+    GridLayoutManager gridLayoutManager;
     LinearLayoutManager linearLayoutManager;
 
     public static File[] files;
     public static String path;
     File directory;
+    ImageView ivNothing,sampleTest;
 //    public static int valuesSize;
 //    List values;
 
@@ -32,27 +52,53 @@ public class ListFiles extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_files);
 
-//        if(getIntent().hasExtra("clickedPath")){
-//            path = getIntent().getStringExtra("clickedPath");
-//            Log.d("Intent Path ", "onCreate: "+path);
-//        }
-//        else {
-            path = Environment.getExternalStorageDirectory().toString()+"/Books";
-//            Log.d("Class Path ", "onCreate: "+path);
-//        }
+        //copy(new File("/storage/emulated/0/-4941010891231570339_120.jpg"), new File("/storage/emulated/0/Download"));
+
+//        moveFile("/storage/emulated/0/-4941010891231570339_120.jpg","-4941010891231570339_120.jpg","/storage/emulated/0/Download");
+
+//        File from = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/kaic1/imagem.jpg");
+//        File to = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/kaic2/imagem.jpg");
+//        from.renameTo(to);
+
+
+        ivNothing = findViewById(R.id.imageViewNothing);
+
+        sampleTest = findViewById(R.id.sampleTest);
+
+
+
+
+
+
+        if(getIntent().hasExtra("clickedPath")){
+            path = getIntent().getStringExtra("clickedPath");
+            Log.d("Intent Path ", "onCreate: "+path);
+        }
+        else {
+            path = Environment.getExternalStorageDirectory().toString();
+            Log.d("Class Path ", "onCreate: "+path);
+        }
         getFiles(path);
 
-//        if(files != null) {
+        if(files != null) {
             listAdapter = new ListAdapter(getApplicationContext(),files);
 
             allRV = findViewById(R.id.allRV);
+            gridLayoutManager = new GridLayoutManager(getApplicationContext(),2);
             linearLayoutManager = new LinearLayoutManager(getApplicationContext(), RecyclerView.VERTICAL, false);
             allRV.setLayoutManager(linearLayoutManager);
             allRV.setAdapter(listAdapter);
-//        }
+            listAdapter.notifyDataSetChanged();
+        }
+        if(files == null || files.length == 0){
+            ivNothing.setVisibility(View.VISIBLE);
+        }
 //        else{
-//            files.length = 0;
+//            ivNothing.setVisibility(View.VISIBLE);
 //        }
+//
+//        Log.d("Check Files", "onCreate: "+files.length);
+
 
         /*
         path = Environment.getExternalStorageDirectory().toString();
@@ -92,6 +138,53 @@ public class ListFiles extends AppCompatActivity {
 */
     }
 
+
+    private void moveFile(String inputPath, String inputFile, String outputPath) {
+
+        InputStream in = null;
+        OutputStream out = null;
+        try {
+
+            //create output directory if it doesn't exist
+            File dir = new File (outputPath);
+            if (!dir.exists())
+            {
+                dir.mkdirs();
+            }
+
+
+            in = new FileInputStream(inputPath + inputFile);
+            out = new FileOutputStream(outputPath + inputFile);
+
+            byte[] buffer = new byte[1024];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
+            in.close();
+            in = null;
+
+            // write the output file
+            out.flush();
+            out.close();
+            out = null;
+
+            // delete the original file
+            new File(inputPath + inputFile).delete();
+
+
+        }
+
+        catch (FileNotFoundException fnfe1) {
+            Log.e("tag", fnfe1.getMessage());
+        }
+        catch (Exception e) {
+            Log.e("tag", e.getMessage());
+        }
+
+    }
+
+
 /*
         @Override
         public void onBackPressed() {
@@ -106,12 +199,30 @@ public class ListFiles extends AppCompatActivity {
         files = directory.listFiles();
 //        int length = files.length;
         if(files != null) {
+            Arrays.sort(files, SizeFileComparator.SIZE_COMPARATOR);
+
             Log.d("FileDetails", "Size: " + files.length);
             Log.d("FileDetails", "Path: " + path);
+
+            String vidPath = files[34].getPath();
+            Log.d("Intent Path ", "My path: "+vidPath);
+
+            RequestOptions requestOptions = new RequestOptions();
+
+            Glide.with(getApplicationContext())
+                    .load(vidPath).apply(requestOptions)
+                    .thumbnail(Glide.with(getApplicationContext())
+                            .load(vidPath))
+                    .into(sampleTest);
+
             for (int i = 0; i < files.length; i++) {
+
                 Log.d("FileDetails", "FileName:" + files[i].getName());
+
             }
         }
     }
+
+
 
 }

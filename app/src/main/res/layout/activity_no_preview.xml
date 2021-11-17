@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".NoPreview">
+
+    <RelativeLayout
+        android:id="@+id/no_preview"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:background="#e9eaee">
+
+        <ImageView
+            android:id="@+id/noPrevBackBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="15dp"
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="15dp"
+            android:layout_marginBottom="15dp"
+            android:src="@drawable/ic_baseline_arrow_back_24" />
+
+        <ImageView
+            android:layout_width="90dp"
+            android:layout_height="90dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/file_open" />
+
+    </RelativeLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/no_preview"
+        android:layout_margin="20dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/noPrevFileName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text=".dev"
+            android:textColor="@color/black"
+            android:textSize="20dp" />
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp">
+
+            <ImageView
+                android:id="@+id/blackFileLogo"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/black_file_logo" />
+
+            <TextView
+                android:id="@+id/noPrevPath"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="15dp"
+                android:layout_toEndOf="@+id/blackFileLogo"
+                android:text="/storage/emulated/0/.dev"
+                android:textColor="@color/black"
+                android:textSize="12dp" />
+
+            <TextView
+                android:id="@+id/noPrevFileSize"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/noPrevPath"
+                android:layout_marginStart="15dp"
+                android:layout_toEndOf="@+id/blackFileLogo"
+                android:text="16 B"
+                android:textSize="10dp" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp">
+
+            <ImageView
+                android:id="@+id/modified_date_logo"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_round_event_24"
+                android:layout_centerVertical="true"/>
+
+            <TextView
+                android:id="@+id/noPrevFileDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="15dp"
+                android:layout_toEndOf="@+id/modified_date_logo"
+                android:text="Modified November 16, 10:09 AM"
+                android:textColor="@color/black"
+                android:textSize="12dp" />
+
+        </RelativeLayout>
+
+
+    </LinearLayout>
+
+
+</RelativeLayout>

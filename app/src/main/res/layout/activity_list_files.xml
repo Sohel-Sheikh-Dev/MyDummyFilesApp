@@ -6,9 +6,25 @@
     android:layout_height="match_parent"
     tools:context=".ListFiles">
 
+    <ImageView
+        android:id="@+id/sampleTest"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:src="@drawable/walkthrough"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/allRV"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/sampleTest"/>
+
+    <ImageView
+        android:id="@+id/imageViewNothing"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:srcCompat="@drawable/nothing" />
+
+
 
 </RelativeLayout>

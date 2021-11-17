@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/folderItem"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
@@ -8,33 +9,45 @@
         android:layout_width="match_parent"
         android:layout_height="70dp">
 
-        <ImageView
-            android:id="@+id/iconIV"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+        <androidx.cardview.widget.CardView
+            android:id="@+id/iconCV"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
             android:layout_alignParentStart="true"
             android:layout_centerInParent="true"
             android:layout_marginStart="20dp"
-            android:src="@drawable/ic_baseline_folder_open_24" />
+            app:cardCornerRadius="25dp">
+
+            <ImageView
+                android:id="@+id/icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_baseline_folder_open_24" />
+
+        </androidx.cardview.widget.CardView>
+
+
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_toEndOf="@+id/iconIV"
+            android:layout_toEndOf="@+id/iconCV"
             android:layout_marginStart="25dp"
             android:gravity="center_vertical"
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/fileName"
+                android:id="@+id/icon_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="15dp"
+                android:fontFamily="sans-serif-medium"
                 android:textColor="@color/black"
                 android:text="Android"/>
 
             <TextView
-                android:id="@+id/fileLastDate"
+                android:id="@+id/storage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="12dp"
