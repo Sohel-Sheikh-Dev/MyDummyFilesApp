@@ -32,10 +32,10 @@
         </provider>
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ListFiles"
             android:exported="true" />
         <activity
-            android:name=".ListFiles"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

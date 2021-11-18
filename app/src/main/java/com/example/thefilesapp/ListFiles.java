@@ -8,12 +8,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -185,14 +189,14 @@ public class ListFiles extends AppCompatActivity {
     }
 
 
-/*
-        @Override
-        public void onBackPressed() {
-            path = "";
-            Log.d("Path", "onCreate: "+path);
-            finish();
-        }
-*/
+    /*
+            @Override
+            public void onBackPressed() {
+                path = "";
+                Log.d("Path", "onCreate: "+path);
+                finish();
+            }
+    */
     public void getFiles(String path) {
 
         directory = new File(path);
@@ -203,7 +207,25 @@ public class ListFiles extends AppCompatActivity {
 
             Log.d("FileDetails", "Size: " + files.length);
             Log.d("FileDetails", "Path: " + path);
+/*
+            String APKFilePath = files[37].getPath(); //For example...
+            Toast.makeText(getApplicationContext(),APKFilePath,Toast.LENGTH_SHORT).show();
 
+            PackageManager pm = getPackageManager();
+            PackageInfo pi = pm.getPackageArchiveInfo(APKFilePath, 0);
+
+            // the secret are these two lines....
+            pi.applicationInfo.sourceDir       = APKFilePath;
+            pi.applicationInfo.publicSourceDir = APKFilePath;
+            //
+
+            Drawable APKicon = pi.applicationInfo.loadIcon(pm);
+            String   AppName = (String)pi.applicationInfo.loadLabel(pm);
+            Glide.with(getApplicationContext())
+                    .load(APKicon)
+                    .into(sampleTest);
+            */
+/*
             String vidPath = files[34].getPath();
             Log.d("Intent Path ", "My path: "+vidPath);
 
@@ -214,7 +236,7 @@ public class ListFiles extends AppCompatActivity {
                     .thumbnail(Glide.with(getApplicationContext())
                             .load(vidPath))
                     .into(sampleTest);
-
+*/
             for (int i = 0; i < files.length; i++) {
 
                 Log.d("FileDetails", "FileName:" + files[i].getName());
@@ -222,6 +244,8 @@ public class ListFiles extends AppCompatActivity {
             }
         }
     }
+
+
 
 
 

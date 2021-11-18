@@ -12,10 +12,12 @@
         <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/drawable/ic_round_search_24.xml" value="0.18771929824561404" />
         <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/drawable/ic_round_view_headline_24.xml" value="0.18771929824561404" />
         <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/layout-v23/activity_main.xml" value="0.20677083333333332" />
+        <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/layout-v23/file_item.xml" value="0.20833333333333334" />
         <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/layout/activity_list_files.xml" value="0.25" />
         <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/layout/activity_main.xml" value="0.33" />
         <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/layout/activity_no_preview.xml" value="0.33" />
-        <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/layout/folder_item.xml" value="0.67" />
+        <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/layout/files_item.xml" value="0.5" />
+        <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/layout/folder_item.xml" value="0.33" />
         <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/layout/main_icon_item.xml" value="0.9" />
         <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/menu/menu.xml" value="0.33" />
         <entry key="..\:/Users/91629/AndroidStudioProjects/TheFilesApp/app/src/main/res/xml/provider_paths.xml" value="0.20677083333333332" />

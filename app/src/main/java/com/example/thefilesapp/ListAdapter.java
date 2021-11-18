@@ -3,13 +3,17 @@ package com.example.thefilesapp;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.FileUtils;
 import android.os.StatFs;
+import android.provider.MediaStore;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -32,6 +36,10 @@ import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.FilenameUtils;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -39,6 +47,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -56,21 +65,28 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
+public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     File[] getFiles;
     Context context;
+
+    private static final int ITEM_TYPE_FOLDER = 1;
+    private static final int ITEM_TYPE_FILE = 2;
+
 
     public ListAdapter(Context context, File[] getFiles) {
         this.getFiles = getFiles;
         this.context = context;
     }
 
-
     @NonNull
     @Override
-    public ListAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ViewHolder(LayoutInflater.from(context.getApplicationContext()).inflate(R.layout.folder_item, parent, false));
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == ITEM_TYPE_FOLDER) {
+            return new FolderViewHolder(LayoutInflater.from(context.getApplicationContext()).inflate(R.layout.folder_item, parent, false));
+        } else {
+            return new FileViewHolder(LayoutInflater.from(context.getApplicationContext()).inflate(R.layout.files_item, parent, false));
+        }
     }
 
     public void copy(File src, File dst) throws IOException {
@@ -157,46 +173,9 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
-    public void onBindViewHolder(@NonNull ListAdapter.ViewHolder holder, int position) {
-
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
         int pos = position;
-
-/*
-        FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(getFiles[34]);
-        AndroidFrameConverter converterToBitmap = new AndroidFrameConverter();
-        OpenCVFrameConverter.ToMat converterToMat = new OpenCVFrameConverter.ToMat();
-
-        try {
-            grabber.start();
-        } catch (FFmpegFrameGrabber.Exception e) {
-            e.printStackTrace();
-        }
-
-        Mat img = new Mat();
-        
-        for(int frameCount = 0;frameCount < grabber.getLengthInVideoFrames();frameCount++){
-            try {
-                Frame nthFrame = grabber.grabImage();
-                Bitmap bitmap = converterToBitmap.convert(nthFrame);
-                Mat mat = converterToMat.convertToOrgOpenCvCoreMat(nthFrame);
-
-//                img = context.getApplicationContext()
-
-
-
-            } catch (FFmpegFrameGrabber.Exception e) {
-                e.printStackTrace();
-            }
-
-
-        }
-*/
-//        Log.d("TAG", "Fileeeeee: " + getFiles[34].getName());
-
-
-
-        holder.fileName.setText(getFiles[pos].getName());
 
         Date lastMod = new Date(getFiles[pos].lastModified());
         LocalDateTime now = LocalDateTime.now();
@@ -204,11 +183,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
         DateFormat sdf = new SimpleDateFormat("MMM d");
 
         DateFormat FMD = new SimpleDateFormat("MMMM d, h:mm a");
-
-        String formattedModDate = FMD.format(lastMod);
-
-        holder.fileLastDate.setText(sdf.format(lastMod));
-
 
         DateFormat dateF1 = new SimpleDateFormat("yyyy-MM-dd");
         DateTimeFormatter dateF2 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -220,76 +194,34 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
         Duration diff = Duration.between(d1.atStartOfDay(), d2.atStartOfDay());
         long diffDays = diff.toDays();
 
+        String formattedModDate = FMD.format(lastMod);
 
+        if (getFiles[pos].isDirectory()) {
+            ((FolderViewHolder) holder).fileName.setText(getFiles[pos].getName());
 
-        /*
+            ((FolderViewHolder) holder).fileLastDate.setText(sdf.format(lastMod));
 
-        DateFormat hour = new SimpleDateFormat("HH");
-        DateFormat min = new SimpleDateFormat("mm");
+            ((FolderViewHolder) holder).eclipces.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
 
-        DateTimeFormatter currHour = DateTimeFormatter.ofPattern("HH");
-        DateTimeFormatter currMin = DateTimeFormatter.ofPattern("mm");
+                    PopupMenu popupMenu = new PopupMenu(context.getApplicationContext(), ((FolderViewHolder) holder).eclipces);
 
-        int h = Integer.parseInt(currHour.format(now));
-        int m = Integer.parseInt(currMin.format(now));
-
-        int modHr = Integer.parseInt(hour.format(lastMod));
-        int modMin = Integer.parseInt(min.format(lastMod));
-
-
-        int diffHr = h - modHr;
-        int diffMin = m - modMin;
-
-        LocalTime time = LocalTime.of(h, m);
-        time = time.minusHours(modHr);
-
-
-
-
-        if (diffDays > 7) {
-            holder.fileLastDate.setText(sdf.format(lastMod));
-        }
-        if (diffDays <= 7 && diffDays > 0) {
-            holder.fileLastDate.setText(diffDays + " days ago");
-        }
-        if (diffDays <= 1) {
-            holder.fileLastDate.setText(sdf.format(lastMod));
-            //Only hours and minutes ago of modified time are left
-            //holder.fileLastDate.setText("Today");
-            //holder.fileLastDate.setText(diffHr+" hours ago");
-        }
-        */
-
-//        if (diffDays <= 7 && diffDays > 1) {
-//            holder.fileLastDate.setText(diffDays + " days ago");
-////            Log.d("Datai", "Diffrence between dates is : " + diffDays + "days");
-//        }
-//        if (diffDays <= 1) {
-//            holder.fileLastDate.setText(diffHr + " hours ago");
-//        }
-
-
-        holder.eclipces.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                PopupMenu popupMenu = new PopupMenu(context.getApplicationContext(), holder.eclipces);
-
-                popupMenu.getMenuInflater().inflate(R.menu.popup_menu, popupMenu.getMenu());
-                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
+                    popupMenu.getMenuInflater().inflate(R.menu.popup_menu, popupMenu.getMenu());
+                    popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                        @Override
+                        public boolean onMenuItemClick(MenuItem item) {
 
 //                        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
 //                        int position = info.position;
 
-                        switch (item.toString()) {
-                            case "copy":
-                                Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
-                                break;
+                            switch (item.toString()) {
+                                case "copy":
+                                    Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
+                                    break;
 
 
-                            case "move":
+                                case "move":
 //                                File sourceLocation = new File(getFiles[pos].getAbsolutePath());
 ////                                sourceLocation.renameTo(new File("/storage/emulated/0/Download"));
 //                                Log.d("Loggy", "" + sourceLocation);
@@ -300,65 +232,93 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
 //                                File to = new File("file://"+Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download");
 //                                from.renameTo(to);
 
-                                Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
-                                break;
+                                    Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
+                                    break;
 
 
-                            case "delete":
-                                Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
-                                Toast.makeText(context.getApplicationContext(), "File name: " + getFiles[pos].getName(), Toast.LENGTH_SHORT).show();
-                                getFiles[pos].delete();
-                                break;
+                                case "delete":
+                                    Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(context.getApplicationContext(), "File name: " + getFiles[pos].getName(), Toast.LENGTH_SHORT).show();
+                                    getFiles[pos].delete();
+//                              notifyItemRemoved(position);
+//                              Toast.makeText(context.getApplicationContext(),"File name: "+getFiles[35].getName(),Toast.LENGTH_SHORT).show();
+//                              getFiles[35].delete();
+                                    break;
 
+                            }
+
+                            return true;
                         }
+                    });
+                    popupMenu.show();
 
-                        return true;
-                    }
-                });
-                popupMenu.show();
-//                notifyItemRemoved(position);
-//                Toast.makeText(context.getApplicationContext(),"File name: "+getFiles[35].getName(),Toast.LENGTH_SHORT).show();
-//                getFiles[35].delete();
-            }
-        });
+                }
+            });
 
+            ((FolderViewHolder) holder).iconIV.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    File dir = new File(String.valueOf(getFiles[pos]));
+                    String sizeString = Formatter.formatFileSize(context.getApplicationContext(), getFileSize(dir));
+                    Toast.makeText(context.getApplicationContext(), "Space: " + sizeString, Toast.LENGTH_SHORT).show();
+                }
+            });
 
-        holder.iconIV.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                File dir = new File(String.valueOf(getFiles[pos]));
-                String sizeString = Formatter.formatFileSize(context.getApplicationContext(), getFileSize(dir));
-                Toast.makeText(context.getApplicationContext(), "Space: " + sizeString, Toast.LENGTH_SHORT).show();
-            }
-        });
+            ((FolderViewHolder) holder).folderItem.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
 
-
-        holder.folderItem.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-
-                if (getFiles[pos].isDirectory()) {
+//                    if (getFiles[pos].isDirectory()) {
                     Toast.makeText(context.getApplicationContext(), "It is a directory", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(context.getApplicationContext(), ListFiles.class);
                     String clickedPath = getFiles[pos].toString();
                     intent.putExtra("clickedPath", clickedPath);
                     Log.d("AdapterFileName", "onClick: " + clickedPath);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    
+                    context.startActivity(intent);
+                        /*
+                    } else {
+                        Intent promptInstall = new Intent(Intent.ACTION_GET_CONTENT);
+                        promptInstall.setAction(Intent.ACTION_VIEW);
+                        final MimeTypeMap mime = MimeTypeMap.getSingleton();
+                        Uri uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", getFiles[pos]);
+                        promptInstall.setDataAndType(uri, mime.getExtensionFromMimeType(com.google.common.io.Files.getFileExtension(getFiles[pos].toString())));
+                        promptInstall.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        promptInstall.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-/*
-                    if (diffDays == 0) {
-                        if (diffHr == 0) {
-                            Log.d("Datai", "Diff min: " + diffMin);
-                        } else {
-                            Log.d("Datai", "Diff hour: " + diffHr);
+                        Log.d("Datai", "Diff days: " + diffDays);
+
+
+                        try {
+                            context.startActivity(promptInstall);
+                        } catch (Exception e) {
+                            Toast.makeText(context, e.getMessage() + "Heyy", Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(context.getApplicationContext(), NoPreview.class);
+                            String filePath = String.valueOf(getFiles[pos]);
+                            intent.putExtra("FilePath", filePath);
+                            intent.putExtra("ModDate", formattedModDate);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            context.startActivity(intent);
                         }
                     }
-*/
+                    */
 
-                    context.startActivity(intent);
-                } else {
+                }
+
+
+            });
+        } else {
+            ((FileViewHolder) holder).fileNameFile.setText(getFiles[pos].getName());
+
+            String extension = FilenameUtils.getExtension(getFiles[pos].getName());
+            String extensionWithDot = getFiles[pos].getName();
+
+
+            ((FileViewHolder) holder).folderItemFile.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    Toast.makeText(context.getApplicationContext(),extension,Toast.LENGTH_SHORT).show();
                     Intent promptInstall = new Intent(Intent.ACTION_GET_CONTENT);
                     promptInstall.setAction(Intent.ACTION_VIEW);
                     final MimeTypeMap mime = MimeTypeMap.getSingleton();
@@ -369,24 +329,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
 
                     Log.d("Datai", "Diff days: " + diffDays);
 
-//                    Log.d("Position", "File Pos: " + getFiles[34].getName());
-
-
-/*
-                    if (diffDays == 0) {
-                        Log.d("Datai", "Current hour: " + h + "\tCurrent minute: " + m);
-                        Log.d("Datai", "Modified hour: " + modHr + "\tModified minute: " + modMin);
-//                        if (diffHr == 0) {
-//                            Log.d("Datai", "Diff min: " + diffMin);
-//                        } else {
-//                            Log.d("Datai", "Diff hour: " + diffHr);
-//                        }
-
-//                        Log.d("Datai", "Diff min: " + diffMin);
-                        Log.d("Datai", "Diff hour: " + finalTime);
-
-                    }
-*/
 
                     try {
                         context.startActivity(promptInstall);
@@ -399,56 +341,62 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
                         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         context.startActivity(intent);
                     }
+
                 }
+            });
 
-
-
-/*
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    Uri uri = FileProvider.getUriForFile(context.getApplicationContext(), BuildConfig.APPLICATION_ID + ".provider", getFiles[pos]);
-                    Log.d("TAG", "openPDF: intent with uri: " + uri);
-                    */
-
-//                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-//                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                    intent.setDataAndType(uri, "application/pdf");
-//                    context.startActivity(Intent.createChooser(intent, "Open with..."));
-
-                    /*
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(FileProvider.getUriForFile(context.getApplicationContext(), BuildConfig.APPLICATION_ID + ".provider", getFiles[pos]), "application/pdf");
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(intent);
-
-                    Intent testIntent = new Intent(Intent.ACTION_VIEW);
-                    testIntent.setType("application/pdf");
-//                    List list = packageManager.queryIntentActivities(testIntent, PackageManager.MATCH_DEFAULT_ONLY);
-                    Intent intent = new Intent();
-                    intent.setAction(Intent.ACTION_VIEW);
-                    Uri uri = Uri.fromFile(getFiles[pos]);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    intent.setDataAndType(uri, "application/pdf");
-                    context.startActivity(intent);
-
-
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    Uri uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", getFiles[pos]);
-                    Log.d("TAG", "openPDF: intent with uri: " + uri);
-                    intent.setDataAndType(uri, "application/pdf");
-                    context.startActivity(Intent.createChooser(intent, "Open with..."));
-*/
+            if(extension.equals("jpg")){
+                Glide.with(context.getApplicationContext()).load(getFiles[pos]).into(((FileViewHolder) holder).iconIVFile);
             }
-//                else {
-//                    Toast.makeText(context.getApplicationContext(), "It is a " + Files.getFileExtension(getFiles[pos].toString()) + " type file" + "\nFile: " + (getFiles[pos].toString()), Toast.LENGTH_SHORT).show();
-//                }
+            if(extension.equals("mp4")){
+                RequestOptions requestOptions = new RequestOptions();
+
+                Glide.with(context.getApplicationContext())
+                        .load(getFiles[pos]).apply(requestOptions)
+                        .thumbnail(Glide.with(context.getApplicationContext())
+                                .load(getFiles[pos]))
+                        .into(((FileViewHolder) holder).iconIVFile);
+            }
+            if(extension.equals("apk")){
+                String APKFilePath = getFiles[pos].getPath(); //For example...
+                Toast.makeText(context.getApplicationContext(),APKFilePath,Toast.LENGTH_SHORT).show();
+
+                PackageManager pm = context.getPackageManager();
+                PackageInfo pi = pm.getPackageArchiveInfo(APKFilePath, 0);
+
+                pi.applicationInfo.sourceDir       = APKFilePath;
+                pi.applicationInfo.publicSourceDir = APKFilePath;
 
 
-        });
+                Drawable APKicon = pi.applicationInfo.loadIcon(pm);
+                Glide.with(context.getApplicationContext()).load(APKicon).into(((FileViewHolder) holder).iconIVFile);
+
+            }
+            if(extensionWithDot.startsWith(".")){
+                Glide.with(context.getApplicationContext()).load(R.drawable.file_open).into(((FileViewHolder) holder).iconIVFile);
+            }
+            if(extension.equals("pdf")){
+                Bitmap thumb = ThumbnailUtils.createVideoThumbnail(String.valueOf(getFiles[pos]), MediaStore.Images.Thumbnails.MINI_KIND);
+                Glide.with(context.getApplicationContext()).load(thumb).into(((FileViewHolder) holder).iconIVFile);
+            }
+            if(extension.equals("opus")){
+                Glide.with(context.getApplicationContext()).load(R.drawable.ic_baseline_audiotrack_24).into(((FileViewHolder) holder).iconIVFile);
+            }
 
 
+        }
+
+
+    }
+
+
+    @Override
+    public int getItemViewType(int position) {
+        if (getFiles[position].isDirectory()) {
+            return ITEM_TYPE_FOLDER;
+        } else {
+            return ITEM_TYPE_FILE;
+        }
     }
 
 
@@ -461,13 +409,13 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
         }
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    public static class FolderViewHolder extends RecyclerView.ViewHolder {
 
         TextView fileName, fileLastDate;
         CardView folderItem;
         ImageView eclipces, iconIV;
 
-        public ViewHolder(@NonNull View itemView) {
+        public FolderViewHolder(@NonNull View itemView) {
             super(itemView);
 
             fileName = itemView.findViewById(R.id.fileName);
@@ -477,4 +425,24 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
             iconIV = itemView.findViewById(R.id.iconIV);
         }
     }
+
+
+    public static class FileViewHolder extends RecyclerView.ViewHolder {
+
+        TextView fileNameFile, fileLastDateFile;
+        CardView folderItemFile;
+        ImageView eclipcesFile, iconIVFile;
+
+        public FileViewHolder(@NonNull View itemView) {
+            super(itemView);
+
+            fileNameFile = itemView.findViewById(R.id.fileNameFile);
+            fileLastDateFile = itemView.findViewById(R.id.fileLastDateFile);
+            folderItemFile = itemView.findViewById(R.id.folderItemFile);
+            eclipcesFile = itemView.findViewById(R.id.threeDotsFile);
+            iconIVFile = itemView.findViewById(R.id.iconIVFile);
+        }
+    }
+
+
 }
