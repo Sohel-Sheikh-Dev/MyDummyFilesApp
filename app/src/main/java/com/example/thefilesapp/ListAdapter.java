@@ -7,11 +7,14 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.graphics.pdf.PdfRenderer;
+import android.media.MediaScannerConnection;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.FileUtils;
+import android.os.ParcelFileDescriptor;
 import android.os.StatFs;
 import android.provider.MediaStore;
 import android.text.format.Formatter;
@@ -39,6 +42,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.FilenameUtils;
+import com.shockwave.pdfium.PdfDocument;
+import com.shockwave.pdfium.PdfiumCore;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -171,11 +176,78 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
 
+    void generateImageFromPdf(Uri pdfUri) {
+        int pageNumber = 0;
+        PdfiumCore pdfiumCore = new PdfiumCore(context.getApplicationContext());
+        try {
+            //http://www.programcreek.com/java-api-examples/index.php?api=android.os.ParcelFileDescriptor
+            ParcelFileDescriptor fd = context.getContentResolver().openFileDescriptor(pdfUri, "r");
+            PdfDocument pdfDocument = pdfiumCore.newDocument(fd);
+            pdfiumCore.openPage(pdfDocument, pageNumber);
+            int width = pdfiumCore.getPageWidthPoint(pdfDocument, pageNumber);
+            int height = pdfiumCore.getPageHeightPoint(pdfDocument, pageNumber);
+            Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            pdfiumCore.renderPageBitmap(pdfDocument, bmp, pageNumber, 0, 0, width, height);
+            saveImage(bmp);
+            pdfiumCore.closeDocument(pdfDocument); // important!
+        } catch (Exception e) {
+            //todo with exception
+        }
+    }
+
+    public final static String FOLDER = Environment.getExternalStorageDirectory() + "/PDF";
+
+    public static void saveImage(Bitmap bmp) {
+        FileOutputStream out = null;
+        try {
+            File folder = new File(FOLDER);
+            if (!folder.exists())
+                folder.mkdirs();
+            File file = new File(folder, "PDF.png");
+            out = new FileOutputStream(file);
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+        } catch (Exception e) {
+            //todo with exception
+        } finally {
+            try {
+                if (out != null)
+                    out.close();
+            } catch (Exception e) {
+                //todo with exception
+            }
+        }
+    }
+
+    private void scanFilesIns(File file, int poss) {
+
+        File[] fileArray = file.listFiles();
+        if (fileArray[poss].isDirectory()) {
+            Log.d("TAG", "Images: " + fileArray[poss]);
+//            scanFilesIns(file,poss);
+            File[] insideFileArray = fileArray[poss].listFiles();
+            Log.d("TAG", "Images Inside: " + insideFileArray[0]);
+        }
+//        if(file.isFile() && (file.getPath().endsWith(".jpg"))){
+//        }
+    }
+
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
         int pos = position;
+//        File pathIns = new File("/storage/emulated/0/Pictures");
+//
+//        MainActivity.scanFiles(pathIns);
+
+        /*
+        File[] fileArray = pathIns.listFiles();
+        if (fileArray[pos].isDirectory()) {
+            File[] insideFileArray = pathIns.listFiles();
+            Log.d("TAG", "Images: " + insideFileArray[pos]);
+        }
+        */
 
         Date lastMod = new Date(getFiles[pos].lastModified());
         LocalDateTime now = LocalDateTime.now();
@@ -318,14 +390,26 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 @Override
                 public void onClick(View v) {
 
-                    Toast.makeText(context.getApplicationContext(),extension,Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context.getApplicationContext(), ""+getFiles[pos], Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context.getApplicationContext(), extension, Toast.LENGTH_SHORT).show();
                     Intent promptInstall = new Intent(Intent.ACTION_GET_CONTENT);
                     promptInstall.setAction(Intent.ACTION_VIEW);
                     final MimeTypeMap mime = MimeTypeMap.getSingleton();
-                    Uri uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", getFiles[pos]);
-                    promptInstall.setDataAndType(uri, mime.getExtensionFromMimeType(com.google.common.io.Files.getFileExtension(getFiles[pos].toString())));
+                    Uri uriForFile = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", getFiles[pos]);
+                    promptInstall.setDataAndType(uriForFile, mime.getExtensionFromMimeType(com.google.common.io.Files.getFileExtension(getFiles[pos].toString())));
                     promptInstall.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     promptInstall.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                    Uri returnUri = promptInstall.getData();
+                    String mimeType = context.getContentResolver().getType(returnUri);
+
+                    File videoFile = new File(String.valueOf(getFiles[pos]));
+
+                    Log.i("TAG", Uri.fromFile(videoFile).toString());
+
+                    MediaScannerConnection.scanFile(context.getApplicationContext(), new String[] { videoFile.getAbsolutePath() }, null, (path, uri) -> Log.i("TAG", uri.toString()));
+
+//                    Log.d("TAG", "Uri: " + Uri.fromFile(new File(String.valueOf(getFiles[pos]))));
 
                     Log.d("Datai", "Diff days: " + diffDays);
 
@@ -345,10 +429,11 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 }
             });
 
-            if(extension.equals("jpg")){
+
+            if (extension.equals("jpg") || extension.equals("png")) {
                 Glide.with(context.getApplicationContext()).load(getFiles[pos]).into(((FileViewHolder) holder).iconIVFile);
             }
-            if(extension.equals("mp4")){
+            if (extension.equals("mp4")) {
                 RequestOptions requestOptions = new RequestOptions();
 
                 Glide.with(context.getApplicationContext())
@@ -357,14 +442,16 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                 .load(getFiles[pos]))
                         .into(((FileViewHolder) holder).iconIVFile);
             }
-            if(extension.equals("apk")){
+
+
+            if (extension.equals("apk")) {
                 String APKFilePath = getFiles[pos].getPath(); //For example...
-                Toast.makeText(context.getApplicationContext(),APKFilePath,Toast.LENGTH_SHORT).show();
+                Toast.makeText(context.getApplicationContext(), APKFilePath, Toast.LENGTH_SHORT).show();
 
                 PackageManager pm = context.getPackageManager();
                 PackageInfo pi = pm.getPackageArchiveInfo(APKFilePath, 0);
 
-                pi.applicationInfo.sourceDir       = APKFilePath;
+                pi.applicationInfo.sourceDir = APKFilePath;
                 pi.applicationInfo.publicSourceDir = APKFilePath;
 
 
@@ -372,14 +459,28 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 Glide.with(context.getApplicationContext()).load(APKicon).into(((FileViewHolder) holder).iconIVFile);
 
             }
-            if(extensionWithDot.startsWith(".")){
+
+            if (extensionWithDot.startsWith(".")) {
                 Glide.with(context.getApplicationContext()).load(R.drawable.file_open).into(((FileViewHolder) holder).iconIVFile);
             }
-            if(extension.equals("pdf")){
-                Bitmap thumb = ThumbnailUtils.createVideoThumbnail(String.valueOf(getFiles[pos]), MediaStore.Images.Thumbnails.MINI_KIND);
-                Glide.with(context.getApplicationContext()).load(thumb).into(((FileViewHolder) holder).iconIVFile);
+
+
+            if (extension.equals("pdf")) {
+                try {
+                    ParcelFileDescriptor input = ParcelFileDescriptor.open(new File(getFiles[pos].getPath()), ParcelFileDescriptor.MODE_READ_ONLY);
+                    PdfRenderer renderer = new PdfRenderer(input);
+                    PdfRenderer.Page page = renderer.openPage(0);
+                    Bitmap bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                    Glide.with(context.getApplicationContext()).load(bitmap).into(((FileViewHolder) holder).iconIVFile);
+                    page.close();
+                    renderer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-            if(extension.equals("opus")){
+
+            if (extension.equals("opus")) {
                 Glide.with(context.getApplicationContext()).load(R.drawable.ic_baseline_audiotrack_24).into(((FileViewHolder) holder).iconIVFile);
             }
 

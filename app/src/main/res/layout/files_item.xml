@@ -10,19 +10,21 @@
 
         <ImageView
             android:id="@+id/iconIVFile"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:scaleType="centerCrop"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_alignParentStart="true"
             android:layout_centerInParent="true"
             android:layout_marginStart="20dp"
+            android:scaleType="centerCrop"
             android:src="@drawable/file_open" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:id="@+id/titleDate"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_toEndOf="@+id/iconIVFile"
             android:layout_marginStart="25dp"
+            android:layout_marginEnd="80dp"
+            android:layout_toEndOf="@+id/iconIVFile"
             android:gravity="center_vertical"
             android:orientation="vertical">
 
@@ -30,16 +32,18 @@
                 android:id="@+id/fileNameFile"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="15dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="Loremipsumdolositametconsecteturadipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
                 android:textColor="@color/black"
-                android:text="Android"/>
+                android:textSize="15dp" />
 
             <TextView
                 android:id="@+id/fileLastDateFile"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="12dp"
-                android:text="Jan 1"/>
+                android:text="Jan 1"
+                android:textSize="12dp" />
 
         </LinearLayout>
 
@@ -56,7 +60,9 @@
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_centerInParent="true"
+            android:layout_marginTop="20dp"
             android:layout_marginEnd="20dp"
+            android:layout_marginBottom="20dp"
             android:src="@drawable/ic_baseline_more_vert_24" />
 
 

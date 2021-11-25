@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -54,9 +55,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     @RequiresApi(api = Build.VERSION_CODES.R)
-    private void checkStorageAccess(){
+    private void checkStorageAccess() {
         if (!Environment.isExternalStorageManager()) {
             Intent intent = new Intent();
             intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
@@ -69,9 +69,10 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
 
-                    Toast.makeText(MainActivity.this, "Clicked", Toast.LENGTH_SHORT).show();
-
                     Intent intent = new Intent(MainActivity.this, ListFiles.class);
+
+//                    ListFiles.getAllDir(Environment.getExternalStorageDirectory());
+
                     startActivity(intent);
                 }
             });
