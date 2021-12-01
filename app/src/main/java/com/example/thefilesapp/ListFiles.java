@@ -1,62 +1,36 @@
 package com.example.thefilesapp;
 
 
-import androidx.annotation.LongDef;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.core.widgets.Rectangle;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.ContentResolver;
-import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
+import android.content.Context;
 import android.database.Cursor;
-import android.database.CursorIndexOutOfBoundsException;
-import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
-import android.graphics.pdf.PdfRenderer;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
-import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.comparator.NameFileComparator;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.comparator.SizeFileComparator;
-import com.shockwave.pdfium.PdfDocument;
-import com.shockwave.pdfium.PdfiumCore;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 
 public class ListFiles extends AppCompatActivity {
 
@@ -73,72 +47,6 @@ public class ListFiles extends AppCompatActivity {
 
 //    public static int valuesSize;
 //    List values;
-
-
-    public static void getAllDir(File dir) {
-        String pdfPattern = ".webp";
-
-        File listFile[] = dir.listFiles();
-
-        if (listFile != null) {
-            for (int i = 0; i < listFile.length; i++) {
-
-                if (listFile[i].isDirectory()) {
-                    getAllDir(listFile[i]);
-                } else {
-                    if (listFile[i].getName().endsWith(pdfPattern)){
-                        Log.d("Thug", "Ghadha"+listFile[i].getName());
-
-                    }
-                }
-            }
-        }
-    }
-
-
-    @RequiresApi(api = Build.VERSION_CODES.Q)
-    private void loadContents() {
-        String queryUri = "";
-
-        ContentResolver contentResolver = getApplicationContext().getContentResolver();
-
-
-//        Uri uriAllImgs = MediaStore.Images.Media.getContentUri("jpeg");
-
-
-//        if (contentTitles.equals("Downloads")) {
-        Uri uriDownloads = Uri.parse("content://media/external_primary/file");
-//            queryUri = uriDownloads.toString();
-//        }
-//        if (contentTitles.equals("Images")) {
-        Uri uriImages = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-//            queryUri = uriImages.toString();
-//        }
-//        if (contentTitles.equals("Videos")) {
-        Uri uriVideos = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-//            queryUri = uriVideos.toString();
-//        }
-//        if (contentTitles.equals("Audio")) {
-        Uri uriAudio = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-//            queryUri = uriAudio.toString();
-//        }
-
-
-        Cursor cursor = contentResolver.query(uriVideos, null, null, null, null);
-
-        long sizee = 0;
-
-        if (cursor != null && cursor.getCount() > 0) {
-            while (cursor.moveToNext()) {
-//                String data = cursor.getString(Integer.parseInt(String.valueOf(cursor.getColumnIndex(MediaStore.Files.FileColumns.SIZE))));
-                String data = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
-                Log.d("Intent Path ", "Data " + data);
-//                sizee += Long.parseLong(data);
-            }
-//            Log.d("Intent Path ", "Data " + Formatter.formatFileSize(getApplicationContext(), sizee));
-            cursor.close();
-        }
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
@@ -159,25 +67,29 @@ public class ListFiles extends AppCompatActivity {
 //        File to = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/kaic2/imagem.jpg");
 //        from.renameTo(to);
 
-        loadContents();
 
         ivNothing = findViewById(R.id.imageViewNothing);
 
         sampleTest = findViewById(R.id.sampleTest);
 
-
         if (getIntent().hasExtra("clickedPath")) {
             path = getIntent().getStringExtra("clickedPath");
             Log.d("Intent Path ", "onCreate: " + path);
+            try {
+                getFiles(path);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         } else {
             path = Environment.getExternalStorageDirectory().toString();
             Log.d("Class Path ", "onCreate: " + path);
+            try {
+                getFiles(path);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        try {
-            getFiles(path);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
 
         if (files != null) {
             listAdapter = new ListAdapter(getApplicationContext(), files);
@@ -270,6 +182,10 @@ public class ListFiles extends AppCompatActivity {
         allRV.setAdapter(listAdapter);
 */
     }
+
+
+
+
 
 
     private void moveFile(String inputPath, String inputFile, String outputPath) {

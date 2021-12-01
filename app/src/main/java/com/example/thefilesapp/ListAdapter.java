@@ -390,7 +390,7 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 @Override
                 public void onClick(View v) {
 
-                    Toast.makeText(context.getApplicationContext(), ""+getFiles[pos], Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context.getApplicationContext(), "Hey ui"+getFiles[pos], Toast.LENGTH_SHORT).show();
                     Toast.makeText(context.getApplicationContext(), extension, Toast.LENGTH_SHORT).show();
                     Intent promptInstall = new Intent(Intent.ACTION_GET_CONTENT);
                     promptInstall.setAction(Intent.ACTION_VIEW);
@@ -468,6 +468,9 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             if (extension.equals("pdf")) {
                 try {
                     ParcelFileDescriptor input = ParcelFileDescriptor.open(new File(getFiles[pos].getPath()), ParcelFileDescriptor.MODE_READ_ONLY);
+
+                    Log.d("PDF", "onBindViewHolder: "+new File(getFiles[pos].getPath()));
+
                     PdfRenderer renderer = new PdfRenderer(input);
                     PdfRenderer.Page page = renderer.openPage(0);
                     Bitmap bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);

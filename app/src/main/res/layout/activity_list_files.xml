@@ -16,8 +16,7 @@
         android:id="@+id/allRV"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-
-        android:layout_below="@+id/sampleTest"/>
+        android:layout_below="@+id/sampleTest" />
 
     <ImageView
         android:id="@+id/imageViewNothing"

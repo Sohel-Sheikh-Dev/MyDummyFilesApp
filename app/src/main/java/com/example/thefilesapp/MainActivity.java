@@ -5,13 +5,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -44,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
 
         checkStorageAccess();
 
+//        getallapps();
+
         mainActivityAdapter = new MainActivityAdapter(getApplicationContext());
 
         cateRV = findViewById(R.id.categories);
@@ -54,6 +62,31 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
+    public void getallapps() {
+        // get list of all the apps installed
+        List<PackageInfo> packList = getPackageManager().getInstalledPackages(0);
+        String[] apps = new String[packList.size()];
+        for (int i = 0; i < packList.size(); i++) {
+            PackageInfo packInfo = packList.get(i);
+            apps[i] = packInfo.applicationInfo.loadLabel(getPackageManager()).toString();
+            Log.d("Apps", "App name "+apps);
+            Log.d("Apps", "No. of apps "+packList.size());
+        }
+
+    }
+        // set all the apps name in list view
+//        listView.setAdapter(new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, apps));
+        // write total count of apps available.
+//        text.setText(infos.size() + " Apps are installed");
+
+
+
+    public static String getApplicationName(Context context) {
+        ApplicationInfo applicationInfo = context.getApplicationInfo();
+        int stringId = applicationInfo.labelRes;
+        return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     private void checkStorageAccess() {
@@ -71,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
                     Intent intent = new Intent(MainActivity.this, ListFiles.class);
 
+
 //                    ListFiles.getAllDir(Environment.getExternalStorageDirectory());
 
                     startActivity(intent);
@@ -78,8 +112,6 @@ public class MainActivity extends AppCompatActivity {
             });
         }
     }
-
-
 
 
 }

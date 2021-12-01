@@ -18,6 +18,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TheFilesApp">
         <activity
+            android:name=".MainComponents.MainCompFiles"
+            android:exported="true" />
+        <activity
             android:name=".NoPreview"
             android:exported="true" />
 
