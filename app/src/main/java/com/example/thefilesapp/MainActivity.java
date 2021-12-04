@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
     public void getallapps() {
         // get list of all the apps installed
         List<PackageInfo> packList = getPackageManager().getInstalledPackages(0);

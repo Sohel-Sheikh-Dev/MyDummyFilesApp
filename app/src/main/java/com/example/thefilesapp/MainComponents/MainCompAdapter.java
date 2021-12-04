@@ -1,5 +1,6 @@
 package com.example.thefilesapp.MainComponents;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -11,6 +12,7 @@ import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,12 +49,14 @@ public class MainCompAdapter extends RecyclerView.Adapter<MainCompAdapter.ViewHo
 
     Context context;
     ArrayList<String> pathList;
+    ArrayList<PackageInfo> packages;
 
-
-    public MainCompAdapter(Context context, ArrayList<String> pathList) {
+    public MainCompAdapter(Context context, ArrayList<String> pathList, ArrayList<PackageInfo> packages) {
         this.context = context;
         this.pathList = pathList;
+        this.packages = packages;
     }
+
 
     @NonNull
     @Override
@@ -65,135 +69,168 @@ public class MainCompAdapter extends RecyclerView.Adapter<MainCompAdapter.ViewHo
     public void onBindViewHolder(@NonNull MainCompAdapter.ViewHolder holder, int position) {
         int pos = position;
 
-        String pathListPos = pathList.get(pos);
+        if (packages != null) {
+            Log.d("Maggy", "TTonCreate: " + "package:"+packages.get(pos).packageName);
+            holder.fileName.setText(packages.get(pos).applicationInfo.loadLabel(context.getPackageManager()).toString());
 
-        Path pathName = Paths.get(pathListPos).getFileName();
-        String extension = FilenameUtils.getExtension(pathName.toString());
-        holder.fileName.setText(pathName.toString());
+            Drawable APKicon = packages.get(pos).applicationInfo.loadIcon(context.getApplicationContext().getPackageManager());
+            Glide.with(context.getApplicationContext()).load(APKicon).into(holder.iconIVFile);
+
+            holder.folderItemFile.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    String packageName = packages.get(pos).packageName;
+
+                    Log.d("Maggy", "TonCreate: " + packageName);
+
+                    Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    i.addCategory(Intent.CATEGORY_DEFAULT);
+                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    i.setData(Uri.parse("package:" + packageName));
+                    context.startActivity(i);
+
+                }
+            });
 
 
-        holder.folderItemFile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        } else {
+            String pathListPos = pathList.get(pos);
 
-                Toast.makeText(context.getApplicationContext(), extension, Toast.LENGTH_SHORT).show();
-                Intent promptInstall = new Intent(Intent.ACTION_GET_CONTENT);
-                promptInstall.setAction(Intent.ACTION_VIEW);
-                final MimeTypeMap mime = MimeTypeMap.getSingleton();
-                Uri uriForFile = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", new File(pathListPos));
-                promptInstall.setDataAndType(uriForFile, mime.getExtensionFromMimeType(com.google.common.io.Files.getFileExtension(new File(pathListPos).toString())));
-                promptInstall.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                promptInstall.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Path pathName = Paths.get(pathListPos).getFileName();
+            String extension = FilenameUtils.getExtension(pathName.toString());
+            holder.fileName.setText(pathName.toString());
 
-                Uri returnUri = promptInstall.getData();
 
-                File videoFile = new File(String.valueOf(new File(pathListPos)));
+            holder.folderItemFile.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+//                Toast.makeText(context.getApplicationContext(), "CC "+packages.get(0), Toast.LENGTH_SHORT).show();
 
-                Log.i("TAG", Uri.fromFile(videoFile).toString());
+                    Toast.makeText(context.getApplicationContext(), extension, Toast.LENGTH_SHORT).show();
+                    Intent promptInstall = new Intent(Intent.ACTION_GET_CONTENT);
+                    promptInstall.setAction(Intent.ACTION_VIEW);
+                    final MimeTypeMap mime = MimeTypeMap.getSingleton();
+                    Uri uriForFile = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", new File(pathListPos));
+                    promptInstall.setDataAndType(uriForFile, mime.getExtensionFromMimeType(com.google.common.io.Files.getFileExtension(new File(pathListPos).toString())));
+                    promptInstall.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    promptInstall.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-                MediaScannerConnection.scanFile(context.getApplicationContext(), new String[]{videoFile.getAbsolutePath()}, null, (path, uri) -> Log.i("TAG", uri.toString()));
+                    Uri returnUri = promptInstall.getData();
+
+                    File videoFile = new File(String.valueOf(new File(pathListPos)));
+
+                    Log.i("TAG", Uri.fromFile(videoFile).toString());
+
+                    MediaScannerConnection.scanFile(context.getApplicationContext(), new String[]{videoFile.getAbsolutePath()}, null, (path, uri) -> Log.i("TAG", uri.toString()));
 
 //                    Log.d("TAG", "Uri: " + Uri.fromFile(new File(String.valueOf(getFiles[pos]))));
 
 //                Log.d("Datai", "Diff days: " + diffDays);
 
 
-                try {
-                    context.startActivity(promptInstall);
-                } catch (Exception e) {
-                    Toast.makeText(context, e.getMessage() + "Heyy", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(context.getApplicationContext(), NoPreview.class);
-                    String filePath = String.valueOf(new File(pathListPos));
-                    intent.putExtra("FilePath", filePath);
+                    try {
+                        context.startActivity(promptInstall);
+                    } catch (Exception e) {
+                        Toast.makeText(context, e.getMessage() + "Heyy", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(context.getApplicationContext(), NoPreview.class);
+                        String filePath = String.valueOf(new File(pathListPos));
+                        intent.putExtra("FilePath", filePath);
 //                    intent.putExtra("ModDate", formattedModDate);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(intent);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(intent);
+                    }
+
                 }
+            });
 
+            String[] imgLists = {"bmp", "gif", "jpg", "png", "webp", "heif"};
+
+            for (String accImg : imgLists) {
+                if (extension.equals(accImg)) {
+                    Glide.with(context.getApplicationContext()).load(pathListPos).into(holder.iconIVFile);
+                }
             }
-        });
 
-        String[] imgLists = {"bmp", "gif", "jpg", "png", "webp", "heif"};
+            String[] vidLists = {"3gp", "mp4", "mkv", "ts", "webm"};
 
-        for (String accImg : imgLists) {
-            if (extension.equals(accImg)) {
-                Glide.with(context.getApplicationContext()).load(pathListPos).into(holder.iconIVFile);
+            for (String accVid : vidLists) {
+                if (extension.equals(accVid)) {
+                    RequestOptions requestOptions = new RequestOptions();
+
+                    Glide.with(context.getApplicationContext())
+                            .load(pathListPos).apply(requestOptions)
+                            .thumbnail(Glide.with(context.getApplicationContext())
+                                    .load(pathListPos))
+                            .into(holder.iconIVFile);
+                }
             }
-        }
 
-        String[] vidLists = {"3gp", "mp4", "mkv", "ts", "webm"};
+            String[] apkLists = {"apk", "xapk", "apks", "apkm"};
 
-        for (String accVid : vidLists) {
-            if (extension.equals(accVid)) {
-                RequestOptions requestOptions = new RequestOptions();
+            for (String accApk : apkLists) {
+                if (extension.equals(accApk)) {
+                    String APKFilePath = pathListPos; //For example...
+                    Toast.makeText(context.getApplicationContext(), APKFilePath, Toast.LENGTH_SHORT).show();
 
-                Glide.with(context.getApplicationContext())
-                        .load(pathListPos).apply(requestOptions)
-                        .thumbnail(Glide.with(context.getApplicationContext())
-                                .load(pathListPos))
-                        .into(holder.iconIVFile);
+                    PackageManager pm = context.getPackageManager();
+                    PackageInfo pi = pm.getPackageArchiveInfo(APKFilePath, 0);
+
+                    pi.applicationInfo.sourceDir = APKFilePath;
+                    pi.applicationInfo.publicSourceDir = APKFilePath;
+
+
+                    Drawable APKicon = pi.applicationInfo.loadIcon(pm);
+                    Glide.with(context.getApplicationContext()).load(APKicon).into(holder.iconIVFile);
+
+                }
             }
-        }
-
-        String[] apkLists = {"apk" , "xapk" , "apks" , "apkm"};
-
-        for (String accApk : apkLists) {
-            if (extension.equals(accApk)) {
-                String APKFilePath = pathListPos; //For example...
-                Toast.makeText(context.getApplicationContext(), APKFilePath, Toast.LENGTH_SHORT).show();
-
-                PackageManager pm = context.getPackageManager();
-                PackageInfo pi = pm.getPackageArchiveInfo(APKFilePath, 0);
-
-                pi.applicationInfo.sourceDir = APKFilePath;
-                pi.applicationInfo.publicSourceDir = APKFilePath;
-
-
-                Drawable APKicon = pi.applicationInfo.loadIcon(pm);
-                Glide.with(context.getApplicationContext()).load(APKicon).into(holder.iconIVFile);
-
-            }
-        }
 
 //        if (extensionWithDot.startsWith(".")) {
 //            Glide.with(context.getApplicationContext()).load(R.drawable.file_open).into(holder.iconIVFile);
 //        }
 
-        String[] docLists = {"doc", "docx", "txt", "csv", "rtf", "odt", "md", "zip", "pdf"};
+            String[] docLists = {"doc", "docx", "txt", "csv", "rtf", "odt", "md", "zip", "pdf"};
 
-        for (String accDoc : docLists) {
-            if (extension.equals(accDoc)) {
-                try {
-                    ParcelFileDescriptor input = ParcelFileDescriptor.open(new File(pathListPos), ParcelFileDescriptor.MODE_READ_ONLY);
-                    Log.d("PDFy", "onBindViewHolder M: " + pathListPos);
-                    PdfRenderer renderer = new PdfRenderer(input);
-                    PdfRenderer.Page page = renderer.openPage(0);
-                    Bitmap bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
-                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                    Glide.with(context.getApplicationContext()).load(bitmap).into(holder.iconIVFile);
-                    page.close();
-                    renderer.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+            for (String accDoc : docLists) {
+                if (extension.equals(accDoc)) {
+                    try {
+                        ParcelFileDescriptor input = ParcelFileDescriptor.open(new File(pathListPos), ParcelFileDescriptor.MODE_READ_ONLY);
+                        Log.d("PDFy", "onBindViewHolder M: " + pathListPos);
+                        PdfRenderer renderer = new PdfRenderer(input);
+                        PdfRenderer.Page page = renderer.openPage(0);
+                        Bitmap bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                        Glide.with(context.getApplicationContext()).load(bitmap).into(holder.iconIVFile);
+                        page.close();
+                        renderer.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-        }
 
 
-        String[] audLists = {"aac", "opus", "flac", "ts", "mid", "xmf", "mxmf", "rtttx", "rtx", "ota", "imy", "ogg", "wav", "mp3"};
+            String[] audLists = {"aac", "opus", "flac", "ts", "mid", "xmf", "mxmf", "rtttx", "rtx", "ota", "imy", "ogg", "wav", "mp3"};
 
-        for (String accAud : audLists) {
-            if (extension.equals(accAud)) {
-                Log.d("PDFy", "onBindViewHolder M: " + pathListPos);
-                Glide.with(context.getApplicationContext()).load(R.drawable.ic_baseline_audiotrack_24).into(holder.iconIVFile);
+            for (String accAud : audLists) {
+                if (extension.equals(accAud)) {
+                    Log.d("PDFy", "onBindViewHolder M: " + pathListPos);
+                    Glide.with(context.getApplicationContext()).load(R.drawable.ic_baseline_audiotrack_24).into(holder.iconIVFile);
+                }
+
             }
-
         }
+
     }
 
     @Override
     public int getItemCount() {
-        return pathList.size();
+        if (packages != null) {
+            return packages.size();
+        } else {
+            return pathList.size();
+        }
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {

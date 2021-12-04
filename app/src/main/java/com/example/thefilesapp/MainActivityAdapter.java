@@ -4,10 +4,12 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.text.format.Formatter;
 import android.util.Log;
@@ -26,6 +28,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.thefilesapp.MainComponents.MainCompFiles;
+import com.example.thefilesapp.MainComponents.MainCompModel;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -37,14 +40,17 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
 
     Context context;
     long totalImageSize, totalVideoSize, totalAudioSize, totalApkSize, totalDocSize;
-    String[] categoryItemList = {"Downloads", "Images", "Videos", "Audio", "Documents & other", "Apps"};
-    String[] categoryItemListSizes = {"315 MB", "193 MB", "6.6 GB", "45 kB", "112 MB", "13 GB"};
-    int[] images = {R.drawable.download_icon, R.drawable.images_icon, R.drawable.videos_icon, R.drawable.ic_baseline_audiotrack_24, R.drawable.document, R.drawable.option};
+    String[] categoryItemList = {"Downloads", "Images", "Videos", "Audio", "Documents & other", "Apps","Apk files"};
+    String[] categoryItemListSizes = {"315 MB", "193 MB", "6.6 GB", "45 kB", "112 MB", "13 GB","11 GB"};
+    int[] images = {R.drawable.download_icon, R.drawable.images_icon, R.drawable.videos_icon, R.drawable.ic_baseline_audiotrack_24, R.drawable.document, R.drawable.option, R.drawable.file_open};
 
     File[] f;
 
     ArrayList<String> valPaths = new ArrayList<>();
-    ArrayList<String> valPathsCopy = new ArrayList<>();
+    ArrayList<PackageInfo> packageInfos = new ArrayList<>();
+
+    List<MainCompModel> mainCompModelList = new ArrayList<>();
+
 
     public MainActivityAdapter(Context context) {
         this.context = context;
@@ -204,6 +210,9 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
                 String clickedPath = categoryItemList[positionCopy];
 
 
+                Intent i = new Intent(context.getApplicationContext(), MainCompFiles.class);
+
+
                 if (clickedPath.equals("Downloads")) {
                     explodeC();
                 }
@@ -228,10 +237,13 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
 
                 if (clickedPath.equals("Apps")) {
                     loadContents("Apps");
-
                 }
 
-                Intent i = new Intent(context.getApplicationContext(), MainCompFiles.class);
+                if (clickedPath.equals("Apk files")) {
+                    installedApps();
+                    i.putExtra("PackageInfos",packageInfos);
+                }
+
                 i.putExtra("ValPath", valPaths);
                 i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(i);
@@ -251,6 +263,25 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
         });
 
     }
+
+    public void installedApps() {
+        List<PackageInfo> packList = context.getPackageManager().getInstalledPackages(0);
+        for (int i = 0; i < packList.size(); i++) {
+            PackageInfo packInfo = packList.get(i);
+            if ((packInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                String appName = packInfo.applicationInfo.loadLabel(context.getPackageManager()).toString();
+
+//                PackageInfo bnb = packInfo.packageName;
+
+//                p = appName;
+//                packInfo.applicationInfo.loadLabel(getPackageManager()).toString();
+                packageInfos.add(packInfo);
+//                mainCompModelList.get(i).getPackageInfoList().add(packInfo);
+                Log.e("App № " + Integer.toString(i), appName + " " + i);
+            }
+        }
+    }
+
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     private void loadContents(String contentTitles) {
@@ -309,6 +340,7 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
                     String data = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
                     Log.d("Intent Path ", "Data " + data);
                     valPaths.add(data);
+//                    mainCompModelList.get(i).setPathList(va);
 //                    valPaths = new String[]{data};
 //                    Log.d("Intent Path ", "Vall" + cursor.getString(cursor.getColumnIndexOrThrow(projection[0])));
 //                sizee += Long.parseLong(data);
