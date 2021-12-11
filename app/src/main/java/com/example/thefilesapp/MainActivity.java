@@ -31,6 +31,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +50,49 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        File from = new File("/storage/emulated/0/Movies/norm.jpg");
+        File to = new File("/storage/emulated/0/Audiobooks/norm.jpg");
+
+        //For moving files
+//        from.renameTo(to);
+
+
+/*
+        //For copying files
+        try {
+
+            InputStream in = new FileInputStream(from);
+            OutputStream out = new FileOutputStream(to);
+
+            // Copy the bits from instream to outstream
+            byte[] buf = new byte[1024];
+            int len;
+
+
+            while (true) {
+                if (!((len = in.read(buf)) > 0)) break;
+
+                out.write(buf, 0, len);
+            }
+
+            in.close();
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), "PP"+e.toString(), Toast.LENGTH_LONG).show();
+        }
+
+        Log.v("TAG", "Copy file successful.");
+*/
+
+//        try {
+//            copyDirectoryOneLocationToAnotherLocation(new File(),new File("/storage/emulated/0/Audiobooks"));
+//        } catch (IOException e) {
+//            Toast.makeText(getApplicationContext(),"PP",Toast.LENGTH_SHORT).show();
+//            e.printStackTrace();
+//        }
+
+
         checkStorageAccess();
 
 //        getallapps();
@@ -63,7 +108,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     public void getallapps() {
         // get list of all the apps installed
         List<PackageInfo> packList = getPackageManager().getInstalledPackages(0);
@@ -71,22 +115,53 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < packList.size(); i++) {
             PackageInfo packInfo = packList.get(i);
             apps[i] = packInfo.applicationInfo.loadLabel(getPackageManager()).toString();
-            Log.d("Apps", "App name "+apps);
-            Log.d("Apps", "No. of apps "+packList.size());
+            Log.d("Apps", "App name " + apps);
+            Log.d("Apps", "No. of apps " + packList.size());
         }
 
     }
-        // set all the apps name in list view
+    // set all the apps name in list view
 //        listView.setAdapter(new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, apps));
-        // write total count of apps available.
+    // write total count of apps available.
 //        text.setText(infos.size() + " Apps are installed");
-
 
 
     public static String getApplicationName(Context context) {
         ApplicationInfo applicationInfo = context.getApplicationInfo();
         int stringId = applicationInfo.labelRes;
         return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
+    }
+
+    public static void copyDirectoryOneLocationToAnotherLocation(File sourceLocation, File targetLocation)
+            throws IOException {
+
+        if (sourceLocation.isDirectory()) {
+            if (!targetLocation.exists()) {
+                targetLocation.mkdir();
+            }
+
+            String[] children = sourceLocation.list();
+            for (int i = 0; i < sourceLocation.listFiles().length; i++) {
+
+                copyDirectoryOneLocationToAnotherLocation(new File(sourceLocation, children[i]),
+                        new File(targetLocation, children[i]));
+            }
+        } else {
+
+            InputStream in = new FileInputStream(sourceLocation);
+
+            OutputStream out = new FileOutputStream(targetLocation);
+
+            // Copy the bits from instream to outstream
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            in.close();
+            out.close();
+        }
+
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
@@ -102,12 +177,9 @@ public class MainActivity extends AppCompatActivity {
             bt2.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
+                    //  /storage/emulated/0/Audiobooks
+                    // /storage/emulated/0/Download/norm.jpg
                     Intent intent = new Intent(MainActivity.this, ListFiles.class);
-
-
-//                    ListFiles.getAllDir(Environment.getExternalStorageDirectory());
-
                     startActivity(intent);
                 }
             });

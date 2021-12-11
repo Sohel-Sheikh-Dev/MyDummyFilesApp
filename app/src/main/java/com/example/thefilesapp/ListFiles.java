@@ -18,7 +18,9 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.comparator.SizeFileComparator;
@@ -69,7 +71,6 @@ public class ListFiles extends AppCompatActivity {
 
 
         ivNothing = findViewById(R.id.imageViewNothing);
-
         sampleTest = findViewById(R.id.sampleTest);
 
         if (getIntent().hasExtra("clickedPath")) {
@@ -92,7 +93,7 @@ public class ListFiles extends AppCompatActivity {
 
 
         if (files != null) {
-            listAdapter = new ListAdapter(getApplicationContext(), files);
+            listAdapter = new ListAdapter(ListFiles.this, files);
 
             allRV = findViewById(R.id.allRV);
             allRV.hasFixedSize();
@@ -101,7 +102,7 @@ public class ListFiles extends AppCompatActivity {
             linearLayoutManager = new LinearLayoutManager(getApplicationContext(), RecyclerView.VERTICAL, false);
             allRV.setLayoutManager(linearLayoutManager);
             allRV.setAdapter(listAdapter);
-            listAdapter.notifyDataSetChanged();
+//            listAdapter.notifyDataSetChanged();   
 
 
         }

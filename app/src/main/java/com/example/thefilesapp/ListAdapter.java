@@ -1,6 +1,5 @@
 package com.example.thefilesapp;
 
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -9,14 +8,10 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfRenderer;
 import android.media.MediaScannerConnection;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
-import android.os.FileUtils;
 import android.os.ParcelFileDescriptor;
-import android.os.StatFs;
-import android.provider.MediaStore;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -24,11 +19,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.MimeTypeMap;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,7 +29,6 @@ import androidx.annotation.RequiresApi;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
-
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -52,28 +43,22 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.nio.channels.FileChannel;
-import java.nio.file.Paths;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     File[] getFiles;
     Context context;
+    public static String actualPath;
+    public static String copyMove;
 
     private static final int ITEM_TYPE_FOLDER = 1;
     private static final int ITEM_TYPE_FILE = 2;
@@ -237,6 +222,8 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
         int pos = position;
+
+
 //        File pathIns = new File("/storage/emulated/0/Pictures");
 //
 //        MainActivity.scanFiles(pathIns);
@@ -311,7 +298,7 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                 case "delete":
                                     Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
                                     Toast.makeText(context.getApplicationContext(), "File name: " + getFiles[pos].getName(), Toast.LENGTH_SHORT).show();
-                                    getFiles[pos].delete();
+//                                    getFiles[pos].delete();
 //                              notifyItemRemoved(position);
 //                              Toast.makeText(context.getApplicationContext(),"File name: "+getFiles[35].getName(),Toast.LENGTH_SHORT).show();
 //                              getFiles[35].delete();
@@ -380,6 +367,76 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             });
         } else {
+
+            ((FileViewHolder) holder).eclipcesFile.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    PopupMenu popupMenu = new PopupMenu(context.getApplicationContext(), ((FileViewHolder) holder).eclipcesFile);
+
+                    popupMenu.getMenuInflater().inflate(R.menu.popup_menu, popupMenu.getMenu());
+                    popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                        @Override
+                        public boolean onMenuItemClick(MenuItem item) {
+
+                            Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
+
+                            actualPath = getFiles[pos].getPath();
+
+                            Log.d("TAG", "Images: " + actualPath);
+
+                            switch (item.toString()) {
+
+                                case "copy":
+                                    /*
+                                    Intent intent = new Intent(context.getApplicationContext(),ListDirectories.class);
+                                    copyMove = "copyFile";
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    context.startActivity(intent);
+                                     */
+
+                                    ListFiles activity = (ListFiles) context;
+                                    CMFrag cmFrag = new CMFrag();
+                                    copyMove = "copyFile";
+//                                    Bundle bundle = new Bundle();
+//                                    bundle.putString("actPath", "getFiles[pos].getPath().toString()");
+//                                    cmFrag.setArguments(bundle);
+                                    activity.getSupportFragmentManager().beginTransaction().replace(R.id.full, cmFrag).addToBackStack(null).commit();
+                                    break;
+
+                                case "move":
+/*
+                                    Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
+                                    Intent moveIntent = new Intent(context.getApplicationContext(),ListDirectories.class);
+                                    copyMove = "moveFile";
+                                    moveIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    context.startActivity(moveIntent);
+
+ */
+                                    ListFiles moveActivity = (ListFiles) context;
+                                    CMFrag moveCmFrag = new CMFrag();
+                                    copyMove = "moveFile";
+//                                    Bundle bundle = new Bundle();
+//                                    bundle.putString("actPath", "getFiles[pos].getPath().toString()");
+//                                    cmFrag.setArguments(bundle);
+                                    moveActivity.getSupportFragmentManager().beginTransaction().replace(R.id.full, moveCmFrag).addToBackStack(null).commit();
+                                    break;
+
+                                case "delete":
+                                    Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(context.getApplicationContext(), "File name: " + getFiles[pos].getName(), Toast.LENGTH_SHORT).show();
+                                    removeItem(pos);
+                                    break;
+
+                            }
+                            return true;
+                        }
+                    });
+                    popupMenu.show();
+
+                }
+            });
+
             ((FileViewHolder) holder).fileNameFile.setText(getFiles[pos].getName());
 
             String extension = FilenameUtils.getExtension(getFiles[pos].getName());
@@ -491,6 +548,11 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
 
+    }
+
+    public void removeItem(int position) {
+        getFiles[position].delete();
+        notifyItemRemoved(position);
     }
 
 

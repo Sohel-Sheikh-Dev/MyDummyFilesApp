@@ -9,9 +9,7 @@
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
-
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <application
         android:allowBackup="true"
@@ -20,6 +18,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TheFilesApp">
+        <activity
+            android:name=".ListDirectories"
+            android:exported="true" />
         <activity
             android:name=".MainComponents.MainCompFiles"
             android:exported="true" />
@@ -39,15 +40,17 @@
 
         <activity
             android:name=".ListFiles"
-            android:exported="true" />
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+
         </activity>
     </application>
 

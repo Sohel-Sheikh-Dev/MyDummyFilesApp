@@ -85,7 +85,7 @@
         android:layout_below="@+id/categories"
         android:layout_centerInParent="true"
         android:layout_marginTop="20dp"
-        android:textColor="@color/black"
-        android:text="Button" />
+        android:text="Button"
+        android:textColor="@color/black" />
 
 </RelativeLayout>
