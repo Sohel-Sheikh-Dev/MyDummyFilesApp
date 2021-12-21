@@ -1,5 +1,6 @@
 package com.example.thefilesapp;
 
+import static com.example.thefilesapp.CopyMoveToScreen.copyMovePath;
 import static com.example.thefilesapp.ListAdapter.actualPath;
 import static com.example.thefilesapp.ListAdapter.copyMove;
 
@@ -24,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,7 +66,7 @@ public class CMFrag extends Fragment {
             Log.d("Intent Path ", "onCreate: " + path);
             listDir(path);
         } else {
-            path = Environment.getExternalStorageDirectory().toString();
+            path = copyMovePath;
             Log.d("Class Path ", "onCreate: " + path);
             listDir(path);
         }
@@ -83,10 +85,11 @@ public class CMFrag extends Fragment {
                 Toast.makeText(getContext(), "Actual File Path is: " + actualFilePath + "\nCurrent path is: " + path, Toast.LENGTH_SHORT).show();
                 Toast.makeText(getContext(), "Which one? " + copyMove, Toast.LENGTH_SHORT).show();
                 if (copyMove.equals("copyFile")) {
-                    copyFiles(actualFilePath, path);
+                    copyFiles(actualFilePath,path);
                 }
                 if (copyMove.equals("moveFile")) {
-                    moveFiles(actualFilePath, path);
+                    mFiles(actualFilePath,path);
+//                    moveFiles(actualFilePath,path);
                 }
                 getFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
             }
@@ -116,9 +119,9 @@ public class CMFrag extends Fragment {
             File from = new File(fromFile);
             File to = new File(toFile + "/" + from.getName());
 
-            Toast.makeText(getContext(), "From: " + from, Toast.LENGTH_SHORT).show();
-            Toast.makeText(getContext(), "To: " + to, Toast.LENGTH_SHORT).show();
-
+            Log.d("Lagg","From: " +from);
+            Log.d("Lagg","To: "+to);
+//            Log.d("Lagg",);
             InputStream in = new FileInputStream(from);
             OutputStream out = new FileOutputStream(to);
 
@@ -140,6 +143,49 @@ public class CMFrag extends Fragment {
             Toast.makeText(getContext(), "PP", Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void mFiles(String fromFile, String toFile) {
+        try {
+            File from = new File(fromFile);
+            File to = new File(toFile + "/" + from.getName());
+
+            Toast.makeText(getContext(), "From: " + from, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "To: " + to, Toast.LENGTH_SHORT).show();
+
+            InputStream in = new FileInputStream(from);
+            OutputStream out = new FileOutputStream(to);
+
+            // Copy the bits from instream to outstream
+            byte[] buf = new byte[1024];
+            int len;
+
+
+            while (true) {
+                if (!((len = in.read(buf)) > 0)) break;
+
+                out.write(buf, 0, len);
+            }
+
+            in.close();
+            in = null;
+            out.flush();
+            out.close();
+            out = null;
+
+            from.delete();
+            dirAdapter.notifyDataSetChanged();
+
+            Log.d("mFiles", "mFiles: "+from);
+
+            Toast.makeText(getContext(), "TTTTTT"+from+"/"+from.getName(), Toast.LENGTH_SHORT).show();
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "PP", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
 
     private void moveFiles(String fromFile, String toFile) {

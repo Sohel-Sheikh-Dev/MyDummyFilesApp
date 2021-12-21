@@ -78,7 +78,6 @@ public class ListDirectories extends AppCompatActivity {
             listDir(path);
         }
 
-
         copyMoveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -1,8 +1,8 @@
 package com.example.thefilesapp.MainComponents;
 
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -12,14 +12,12 @@ import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.MimeTypeMap;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,23 +25,28 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.FileProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.thefilesapp.BuildConfig;
-import com.example.thefilesapp.MainActivityAdapter;
 import com.example.thefilesapp.NoPreview;
 import com.example.thefilesapp.R;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.FilenameUtils;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class MainCompAdapter extends RecyclerView.Adapter<MainCompAdapter.ViewHolder> {
 
@@ -70,11 +73,18 @@ public class MainCompAdapter extends RecyclerView.Adapter<MainCompAdapter.ViewHo
         int pos = position;
 
         if (packages != null) {
-            Log.d("Maggy", "TTonCreate: " + "package:"+packages.get(pos).packageName);
+
+            long updateTimeInMilliseconds = new File(packages.get(pos).applicationInfo.sourceDir).lastModified();
+
+            DateFormat sdf = new SimpleDateFormat("MMM d");
+
+            holder.lastDatem.setText(sdf.format(updateTimeInMilliseconds));
+
+            Log.d("Maggy", "TTonCreate: " + "package:" + packages.get(pos).packageName);
             holder.fileName.setText(packages.get(pos).applicationInfo.loadLabel(context.getPackageManager()).toString());
 
-            Drawable APKicon = packages.get(pos).applicationInfo.loadIcon(context.getApplicationContext().getPackageManager());
-            Glide.with(context.getApplicationContext()).load(APKicon).into(holder.iconIVFile);
+            Drawable icons = packages.get(pos).applicationInfo.loadIcon(context.getApplicationContext().getPackageManager());
+            Glide.with(context.getApplicationContext()).load(icons).into(holder.iconIVFile);
 
             holder.folderItemFile.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -96,6 +106,28 @@ public class MainCompAdapter extends RecyclerView.Adapter<MainCompAdapter.ViewHo
 
         } else {
             String pathListPos = pathList.get(pos);
+
+            File fileDate = new File(pathListPos);
+            Date lastMod = new Date(fileDate.lastModified());
+            LocalDateTime now = LocalDateTime.now();
+
+            DateFormat sdf = new SimpleDateFormat("MMM d");
+
+            DateFormat FMD = new SimpleDateFormat("MMMM d, h:mm a");
+
+            DateFormat dateF1 = new SimpleDateFormat("yyyy-MM-dd");
+            DateTimeFormatter dateF2 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+            LocalDate d1 = LocalDate.parse(dateF1.format(lastMod), DateTimeFormatter.ISO_LOCAL_DATE);
+            LocalDate d2 = LocalDate.parse(dateF2.format(now), DateTimeFormatter.ISO_LOCAL_DATE);
+
+
+            Duration diff = Duration.between(d1.atStartOfDay(), d2.atStartOfDay());
+            long diffDays = diff.toDays();
+
+            String formattedModDate = FMD.format(lastMod);
+
+            holder.lastDatem.setText(sdf.format(lastMod));
 
             Path pathName = Paths.get(pathListPos).getFileName();
             String extension = FilenameUtils.getExtension(pathName.toString());
@@ -186,28 +218,43 @@ public class MainCompAdapter extends RecyclerView.Adapter<MainCompAdapter.ViewHo
                 }
             }
 
-//        if (extensionWithDot.startsWith(".")) {
-//            Glide.with(context.getApplicationContext()).load(R.drawable.file_open).into(holder.iconIVFile);
-//        }
+            if (extension.equals("zip")) {
+                Glide.with(context.getApplicationContext()).load(R.drawable.file_open).into(holder.iconIVFile);
+            }
 
-            String[] docLists = {"doc", "docx", "txt", "csv", "rtf", "odt", "md", "zip", "pdf"};
+
+            String[] docLists = {"doc", "docx", "txt", "csv", "rtf", "odt", "md", "pdf"};
 
             for (String accDoc : docLists) {
                 if (extension.equals(accDoc)) {
+//                    File fp = new File(pathListPos);
+//                    Toast.makeText(context.getApplicationContext(), "" + fp, Toast.LENGTH_SHORT).show();
+//                    Glide.with(context.getApplicationContext()).load(R.drawable.file_open).into(holder.iconIVFile);
+
                     try {
-                        ParcelFileDescriptor input = ParcelFileDescriptor.open(new File(pathListPos), ParcelFileDescriptor.MODE_READ_ONLY);
-                        Log.d("PDFy", "onBindViewHolder M: " + pathListPos);
-                        PdfRenderer renderer = new PdfRenderer(input);
-                        PdfRenderer.Page page = renderer.openPage(0);
-                        Bitmap bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
-                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                        Glide.with(context.getApplicationContext()).load(bitmap).into(holder.iconIVFile);
-                        page.close();
-                        renderer.close();
+                        PDDocument pdfReader = PDDocument.load(new File(pathListPos));
+                        if (pdfReader.isEncrypted()) {
+                            Glide.with(context.getApplicationContext()).load(R.drawable.file_open).into(holder.iconIVFile);
+                        }
+                        if (!(pdfReader.isEncrypted())) {
+                            ParcelFileDescriptor input = ParcelFileDescriptor.open(new File(pathListPos), ParcelFileDescriptor.MODE_READ_ONLY);
+                            PdfRenderer renderer = new PdfRenderer(input);
+//                        Log.d("PDFy", "onBindViewHolder M: " + renderer);
+                            PdfRenderer.Page page = renderer.openPage(0);
+                            Bitmap bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                            Glide.with(context.getApplicationContext()).load(bitmap).into(holder.iconIVFile);
+                            page.close();
+                            renderer.close();
+                        } else {
+                            Glide.with(context.getApplicationContext()).load(R.drawable.file_open).into(holder.iconIVFile);
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
                 }
+
             }
 
 
@@ -238,6 +285,7 @@ public class MainCompAdapter extends RecyclerView.Adapter<MainCompAdapter.ViewHo
         TextView fileName;
         CardView folderItemFile;
         ImageView iconIVFile;
+        TextView lastDatem;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -245,6 +293,7 @@ public class MainCompAdapter extends RecyclerView.Adapter<MainCompAdapter.ViewHo
             fileName = itemView.findViewById(R.id.fileNameFile);
             folderItemFile = itemView.findViewById(R.id.folderItemFile);
             iconIVFile = itemView.findViewById(R.id.iconIVFile);
+            lastDatem = itemView.findViewById(R.id.fileLastDateFile);
         }
     }
 }

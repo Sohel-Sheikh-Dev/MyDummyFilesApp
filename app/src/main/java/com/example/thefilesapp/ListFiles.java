@@ -1,28 +1,27 @@
 package com.example.thefilesapp;
 
 
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.content.ContentResolver;
-import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.comparator.SizeFileComparator;
 
 import java.io.File;
@@ -50,11 +49,13 @@ public class ListFiles extends AppCompatActivity {
 //    public static int valuesSize;
 //    List values;
 
-    @RequiresApi(api = Build.VERSION_CODES.Q)
+    @RequiresApi(api = Build.VERSION_CODES.R)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_files);
+
+//        loadAudio();
 
 //        getAllDir(Environment.getExternalStorageDirectory());
 
@@ -73,6 +74,8 @@ public class ListFiles extends AppCompatActivity {
         ivNothing = findViewById(R.id.imageViewNothing);
         sampleTest = findViewById(R.id.sampleTest);
 
+        Glide.with(getApplicationContext()).load(new File("/storage/0BB0-1407/punisher.jpg")).into(sampleTest);
+
         if (getIntent().hasExtra("clickedPath")) {
             path = getIntent().getStringExtra("clickedPath");
             Log.d("Intent Path ", "onCreate: " + path);
@@ -81,7 +84,8 @@ public class ListFiles extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } else {
+        }
+        if (getIntent().hasExtra("intrPath")) {
             path = Environment.getExternalStorageDirectory().toString();
             Log.d("Class Path ", "onCreate: " + path);
             try {
@@ -90,10 +94,29 @@ public class ListFiles extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+        if (getIntent().hasExtra("sdPath")) {
+            path = getIntent().getStringExtra("sdPath");
+            Log.d("SdPath", "onCreate: " + path);
+            try {
+                getFiles(path);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (getIntent().hasExtra("massPath")) {
+            path = getIntent().getStringExtra("massPath");
+            Log.d("Intent Path ", "onCreate: " + path);
+            try {
+                getFiles(path);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
 
 
         if (files != null) {
-            listAdapter = new ListAdapter(ListFiles.this, files);
+            listAdapter = new ListAdapter(ListFiles.this, files, directory);
 
             allRV = findViewById(R.id.allRV);
             allRV.hasFixedSize();
@@ -239,7 +262,7 @@ public class ListFiles extends AppCompatActivity {
                 finish();
             }
     */
-
+//no no no dont go there
     public static String getMimeType(String url) {
         String extension = MimeTypeMap.getFileExtensionFromUrl(url);
         if (extension != null) {
@@ -264,11 +287,28 @@ public class ListFiles extends AppCompatActivity {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.R)
     public void getFiles(String path) throws IOException {
 
         directory = new File(path);
         files = directory.listFiles();
-//        int length = files.length;
+
+
+/*
+
+
+        File[] p = getExternalFilesDirs(null);
+
+        String[] fSplit = p[2].toString().split("/");
+        Log.d("Filuu", "Path: " + fSplit[2]);
+
+        File dirt = new File("/storage/"+fSplit[2]);
+        File[] fii = dirt.listFiles();
+        for (int i = 0; i < fii.length; i++) {
+            Log.d("Filuu", "Path: " + fii[i]);
+        }
+*/
+
         if (files != null) {
             Arrays.sort(files, SizeFileComparator.SIZE_COMPARATOR);
 
@@ -325,7 +365,7 @@ public class ListFiles extends AppCompatActivity {
     }
 
 
-    /*
+
         @RequiresApi(api = Build.VERSION_CODES.Q)
     private void loadAudio() {
         ContentResolver contentResolver = getApplicationContext().getContentResolver();
@@ -341,13 +381,13 @@ public class ListFiles extends AppCompatActivity {
 //        String sortOrder = MediaStore.Audio.Media.TITLE + " ASC";
 
 //        String[] projection = {MediaStore.MediaColumns.DATA};
-        Cursor cursor = contentResolver.query(uriDownloads, null, null, null, null);
+        Cursor cursor = contentResolver.query(uriImages, null, null, null, null);
 
         long sizee = 0;
 
         if (cursor != null && cursor.getCount() > 0) {
             while (cursor.moveToNext()) {
-                String data = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE));
+                String data = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE));
 //                String data = cursor.getString(Integer.parseInt(String.valueOf(cursor.getColumnIndex(MediaStore.Audio.Media.DATA))));
 //                String title = cursor.getString(Integer.parseInt(String.valueOf(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE))));
 //                String album = cursor.getString(Integer.parseInt(String.valueOf(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM))));
@@ -364,7 +404,9 @@ public class ListFiles extends AppCompatActivity {
             Log.d("Intent Path ", "Data " + Formatter.formatFileSize(getApplicationContext(), sizee));
             cursor.close();
         }
-    }    @RequiresApi(api = Build.VERSION_CODES.Q)
+    }
+      /*
+      @RequiresApi(api = Build.VERSION_CODES.Q)
     private void loadAudio() {
         ContentResolver contentResolver = getApplicationContext().getContentResolver();
 

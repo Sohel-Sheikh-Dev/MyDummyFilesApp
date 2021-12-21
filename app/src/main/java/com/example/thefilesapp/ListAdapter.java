@@ -1,5 +1,6 @@
 package com.example.thefilesapp;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -12,6 +13,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
+import android.os.StatFs;
+import android.provider.MediaStore;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -33,8 +36,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.FilenameUtils;
-import com.shockwave.pdfium.PdfDocument;
-import com.shockwave.pdfium.PdfiumCore;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.util.PDFBoxResourceLoader;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -56,7 +59,12 @@ import java.util.List;
 public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     File[] getFiles;
+
+
     Context context;
+
+    File dirrs;
+
     public static String actualPath;
     public static String copyMove;
 
@@ -64,9 +72,10 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int ITEM_TYPE_FILE = 2;
 
 
-    public ListAdapter(Context context, File[] getFiles) {
+    public ListAdapter(Context context, File[] getFiles, File dirss) {
         this.getFiles = getFiles;
         this.context = context;
+        this.dirrs = dirss;
     }
 
     @NonNull
@@ -161,24 +170,24 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
 
-    void generateImageFromPdf(Uri pdfUri) {
-        int pageNumber = 0;
-        PdfiumCore pdfiumCore = new PdfiumCore(context.getApplicationContext());
-        try {
-            //http://www.programcreek.com/java-api-examples/index.php?api=android.os.ParcelFileDescriptor
-            ParcelFileDescriptor fd = context.getContentResolver().openFileDescriptor(pdfUri, "r");
-            PdfDocument pdfDocument = pdfiumCore.newDocument(fd);
-            pdfiumCore.openPage(pdfDocument, pageNumber);
-            int width = pdfiumCore.getPageWidthPoint(pdfDocument, pageNumber);
-            int height = pdfiumCore.getPageHeightPoint(pdfDocument, pageNumber);
-            Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            pdfiumCore.renderPageBitmap(pdfDocument, bmp, pageNumber, 0, 0, width, height);
-            saveImage(bmp);
-            pdfiumCore.closeDocument(pdfDocument); // important!
-        } catch (Exception e) {
-            //todo with exception
-        }
-    }
+//    void generateImageFromPdf(Uri pdfUri) {
+//        int pageNumber = 0;
+//        PdfiumCore pdfiumCore = new PdfiumCore(context.getApplicationContext());
+//        try {
+//            //http://www.programcreek.com/java-api-examples/index.php?api=android.os.ParcelFileDescriptor
+//            ParcelFileDescriptor fd = context.getContentResolver().openFileDescriptor(pdfUri, "r");
+//            PdfDocument pdfDocument = pdfiumCore.newDocument(fd);
+//            pdfiumCore.openPage(pdfDocument, pageNumber);
+//            int width = pdfiumCore.getPageWidthPoint(pdfDocument, pageNumber);
+//            int height = pdfiumCore.getPageHeightPoint(pdfDocument, pageNumber);
+//            Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+//            pdfiumCore.renderPageBitmap(pdfDocument, bmp, pageNumber, 0, 0, width, height);
+//            saveImage(bmp);
+//            pdfiumCore.closeDocument(pdfDocument); // important!
+//        } catch (Exception e) {
+//            //todo with exception
+//        }
+//    }
 
     public final static String FOLDER = Environment.getExternalStorageDirectory() + "/PDF";
 
@@ -214,6 +223,39 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 //        if(file.isFile() && (file.getPath().endsWith(".jpg"))){
 //        }
+    }
+
+
+    public static String formatSize(long size) {
+        String suffix = null;
+
+        if (size >= 1024) {
+            suffix = "KB";
+            size /= 1024;
+            if (size >= 1024) {
+                suffix = "MB";
+                size /= 1024;
+            }
+        }
+
+        StringBuilder resultBuffer = new StringBuilder(Long.toString(size));
+
+        int commaOffset = resultBuffer.length() - 3;
+        while (commaOffset > 0) {
+            resultBuffer.insert(commaOffset, ',');
+            commaOffset -= 3;
+        }
+
+        if (suffix != null) resultBuffer.append(suffix);
+        return resultBuffer.toString();
+    }
+
+    public static String getTotalInternalMemorySize() {
+        File path = Environment.getDataDirectory();
+        StatFs stat = new StatFs(path.getPath());
+        long blockSize = stat.getBlockSizeLong();
+        long totalBlocks = stat.getBlockCountLong();
+        return formatSize(totalBlocks * blockSize);
     }
 
 
@@ -274,38 +316,69 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 //                        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
 //                        int position = info.position;
 
-                            switch (item.toString()) {
-                                case "copy":
-                                    Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
-                                    break;
+                            actualPath = getFiles[pos].getPath();
 
+                            switch (item.toString()) {
+
+                                case "copy":
+
+                                    Intent intent = new Intent(context.getApplicationContext(),CopyMoveToScreen.class);
+                                    copyMove = "copyFile";
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    context.startActivity(intent);
+
+                                    /*
+                                    Intent intent = new Intent(context.getApplicationContext(),ListDirectories.class);
+                                    copyMove = "copyFile";
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    context.startActivity(intent);
+                                     */
+/*
+
+                                    ListFiles activity = (ListFiles) context;
+                                    CMFrag cmFrag = new CMFrag();
+                                    copyMove = "copyFile";
+//                                    Bundle bundle = new Bundle();
+//                                    bundle.putString("actPath", "getFiles[pos].getPath().toString()");
+//                                    cmFrag.setArguments(bundle);
+                                    activity.getSupportFragmentManager().beginTransaction().replace(R.id.full, cmFrag).addToBackStack(null).commit();
+*/
+                                    break;
 
                                 case "move":
-//                                File sourceLocation = new File(getFiles[pos].getAbsolutePath());
-////                                sourceLocation.renameTo(new File("/storage/emulated/0/Download"));
-//                                Log.d("Loggy", "" + sourceLocation);
-//
-//                                Log.d("Hagy", "onCreate: " + (Environment.getExternalStorageDirectory().getAbsolutePath() + "/-4941010891231570339_120.jpg"));
-//
-//                                File from = new File("file://"+Environment.getExternalStorageDirectory().getAbsolutePath() + "/-4941010891231570339_120.jpg");
-//                                File to = new File("file://"+Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download");
-//                                from.renameTo(to);
 
+
+                                    Intent mintent = new Intent(context.getApplicationContext(),CopyMoveToScreen.class);
+                                    copyMove = "moveFile";
+                                    mintent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    context.startActivity(mintent);
+
+/*
                                     Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
-                                    break;
+                                    Intent moveIntent = new Intent(context.getApplicationContext(),ListDirectories.class);
+                                    copyMove = "moveFile";
+                                    moveIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    context.startActivity(moveIntent);
+ */
+/*
 
+                                    ListFiles moveActivity = (ListFiles) context;
+                                    CMFrag moveCmFrag = new CMFrag();
+                                    copyMove = "moveFile";
+//                                    Bundle bundle = new Bundle();
+//                                    bundle.putString("actPath", "getFiles[pos].getPath().toString()");
+//                                    cmFrag.setArguments(bundle);
+                                    moveActivity.getSupportFragmentManager().beginTransaction().replace(R.id.full, moveCmFrag).addToBackStack(null).commit();
+ */
+                                    break;
 
                                 case "delete":
                                     Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
                                     Toast.makeText(context.getApplicationContext(), "File name: " + getFiles[pos].getName(), Toast.LENGTH_SHORT).show();
-//                                    getFiles[pos].delete();
-//                              notifyItemRemoved(position);
-//                              Toast.makeText(context.getApplicationContext(),"File name: "+getFiles[35].getName(),Toast.LENGTH_SHORT).show();
-//                              getFiles[35].delete();
+                                    removeItem(pos);
                                     break;
 
                             }
-
                             return true;
                         }
                     });
@@ -317,9 +390,9 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             ((FolderViewHolder) holder).iconIV.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    File dir = new File(String.valueOf(getFiles[pos]));
+                    File dir = new File("/storage/emulated/0");
                     String sizeString = Formatter.formatFileSize(context.getApplicationContext(), getFileSize(dir));
-                    Toast.makeText(context.getApplicationContext(), "Space: " + sizeString, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context.getApplicationContext(), "Space: " + getTotalInternalMemorySize(), Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -388,6 +461,12 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                             switch (item.toString()) {
 
                                 case "copy":
+
+                                    Intent intent = new Intent(context.getApplicationContext(),CopyMoveToScreen.class);
+                                    copyMove = "copyFile";
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    context.startActivity(intent);
+
                                     /*
                                     Intent intent = new Intent(context.getApplicationContext(),ListDirectories.class);
                                     copyMove = "copyFile";
@@ -395,24 +474,34 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                     context.startActivity(intent);
                                      */
 
-                                    ListFiles activity = (ListFiles) context;
-                                    CMFrag cmFrag = new CMFrag();
-                                    copyMove = "copyFile";
-//                                    Bundle bundle = new Bundle();
-//                                    bundle.putString("actPath", "getFiles[pos].getPath().toString()");
-//                                    cmFrag.setArguments(bundle);
-                                    activity.getSupportFragmentManager().beginTransaction().replace(R.id.full, cmFrag).addToBackStack(null).commit();
+
+//                                    ListFiles activity = (ListFiles) context;
+//                                    CMFrag cmFrag = new CMFrag();
+//                                    copyMove = "copyFile";
+////                                    Bundle bundle = new Bundle();
+////                                    bundle.putString("actPath", "getFiles[pos].getPath().toString()");
+////                                    cmFrag.setArguments(bundle);
+//                                    activity.getSupportFragmentManager().beginTransaction().replace(R.id.full, cmFrag).addToBackStack(null).commit();
+
                                     break;
 
                                 case "move":
+
+
+                                    Intent mintent = new Intent(context.getApplicationContext(),CopyMoveToScreen.class);
+                                    copyMove = "moveFile";
+                                    mintent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    context.startActivity(mintent);
+
 /*
                                     Toast.makeText(context.getApplicationContext(), "You Clicked " + item.getTitle(), Toast.LENGTH_SHORT).show();
                                     Intent moveIntent = new Intent(context.getApplicationContext(),ListDirectories.class);
                                     copyMove = "moveFile";
                                     moveIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                     context.startActivity(moveIntent);
-
  */
+/*
+
                                     ListFiles moveActivity = (ListFiles) context;
                                     CMFrag moveCmFrag = new CMFrag();
                                     copyMove = "moveFile";
@@ -420,6 +509,7 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 //                                    bundle.putString("actPath", "getFiles[pos].getPath().toString()");
 //                                    cmFrag.setArguments(bundle);
                                     moveActivity.getSupportFragmentManager().beginTransaction().replace(R.id.full, moveCmFrag).addToBackStack(null).commit();
+*/
                                     break;
 
                                 case "delete":
@@ -439,7 +529,9 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             ((FileViewHolder) holder).fileNameFile.setText(getFiles[pos].getName());
 
+
             String extension = FilenameUtils.getExtension(getFiles[pos].getName());
+            Toast.makeText(context.getApplicationContext(), "" + getFiles[pos].getName(), Toast.LENGTH_SHORT).show();
             String extensionWithDot = getFiles[pos].getName();
 
 
@@ -523,18 +615,24 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
 
             if (extension.equals("pdf")) {
+
+                PDFBoxResourceLoader.init(context.getApplicationContext());
+
                 try {
-                    ParcelFileDescriptor input = ParcelFileDescriptor.open(new File(getFiles[pos].getPath()), ParcelFileDescriptor.MODE_READ_ONLY);
-
-                    Log.d("PDF", "onBindViewHolder: "+new File(getFiles[pos].getPath()));
-
-                    PdfRenderer renderer = new PdfRenderer(input);
-                    PdfRenderer.Page page = renderer.openPage(0);
-                    Bitmap bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
-                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                    Glide.with(context.getApplicationContext()).load(bitmap).into(((FileViewHolder) holder).iconIVFile);
-                    page.close();
-                    renderer.close();
+                    PDDocument pdfReader = PDDocument.load(new File(getFiles[pos].getPath()));
+                    if (pdfReader.isEncrypted()) {
+                        Glide.with(context.getApplicationContext()).load(R.drawable.file_open).into(((FileViewHolder) holder).iconIVFile);
+                    } else {
+                        ParcelFileDescriptor input = ParcelFileDescriptor.open(new File(getFiles[pos].getPath()), ParcelFileDescriptor.MODE_READ_ONLY);
+                        Log.d("PDF", "onBindViewHolder: " + new File(getFiles[pos].getPath()));
+                        PdfRenderer renderer = new PdfRenderer(input);
+                        PdfRenderer.Page page = renderer.openPage(0);
+                        Bitmap bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                        Glide.with(context.getApplicationContext()).load(bitmap).into(((FileViewHolder) holder).iconIVFile);
+                        page.close();
+                        renderer.close();
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -555,6 +653,14 @@ public class ListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         notifyItemRemoved(position);
     }
 
+    private void deleteFile(String inputPath, String inputFile) {
+        try {
+            // delete the original file
+            new File(inputPath + inputFile).delete();
+        } catch (Exception e) {
+            Log.e("tag", e.getMessage());
+        }
+    }
 
     @Override
     public int getItemViewType(int position) {

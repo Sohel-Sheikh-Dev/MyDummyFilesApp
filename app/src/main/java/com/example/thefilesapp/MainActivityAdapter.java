@@ -1,15 +1,21 @@
 package com.example.thefilesapp;
 
+import android.app.usage.StorageStats;
+import android.app.usage.StorageStatsManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.IPackageStatsObserver;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageStats;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Parcelable;
+import android.os.RemoteException;
+import android.os.storage.StorageManager;
 import android.provider.MediaStore;
 import android.text.format.Formatter;
 import android.util.Log;
@@ -31,18 +37,18 @@ import com.example.thefilesapp.MainComponents.MainCompFiles;
 import com.example.thefilesapp.MainComponents.MainCompModel;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapter.ViewHolder> {
 
     Context context;
     long totalImageSize, totalVideoSize, totalAudioSize, totalApkSize, totalDocSize;
-    String[] categoryItemList = {"Downloads", "Images", "Videos", "Audio", "Documents & other", "Apps","Apk files"};
-    String[] categoryItemListSizes = {"315 MB", "193 MB", "6.6 GB", "45 kB", "112 MB", "13 GB","11 GB"};
-    int[] images = {R.drawable.download_icon, R.drawable.images_icon, R.drawable.videos_icon, R.drawable.ic_baseline_audiotrack_24, R.drawable.document, R.drawable.option, R.drawable.file_open};
+    String[] categoryItemList = {"Downloads", "Images", "Videos", "Audio", "Documents & other", "Apk files","Apps"};
+    int[] images = {R.drawable.download_icon, R.drawable.images_icon, R.drawable.videos_icon, R.drawable.ic_baseline_audiotrack_24, R.drawable.document, R.drawable.ic_baseline_android_24, R.drawable.option};
 
     File[] f;
 
@@ -51,9 +57,12 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
 
     List<MainCompModel> mainCompModelList = new ArrayList<>();
 
+    ArrayList<String> componentSizes = new ArrayList<>();
 
-    public MainActivityAdapter(Context context) {
+
+    public MainActivityAdapter(Context context, ArrayList<String> componentSizes) {
         this.context = context;
+        this.componentSizes = componentSizes;
     }
 
     @NonNull
@@ -173,31 +182,16 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
         }
     }
 
-
-    @RequiresApi(api = Build.VERSION_CODES.Q)
-    public void explodeC() {
-        ContentResolver contentResolver = context.getApplicationContext().getContentResolver();
-        Uri uriDownloads = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
-        Cursor cursor = contentResolver.query(uriDownloads, null, null, null, null);
-        if (cursor != null && cursor.getCount() > 0) {
-            while (cursor.moveToNext()) {
-                String data = cursor.getString(Integer.parseInt(String.valueOf(cursor.getColumnIndex(MediaStore.Downloads.DATA))));
-                Log.d("Intent Path ", "Data " + data);
-                valPaths.add(data);
-//                Log.d("Intent Path ", "Data " + Formatter.formatFileSize(getApplicationContext(), sizee));
-            }
-        }
-    }
-
-
     @RequiresApi(api = Build.VERSION_CODES.R)
     @Override
     public void onBindViewHolder(@NonNull MainActivityAdapter.ViewHolder holder, int position) {
 
         int positionCopy = position;
 
+        Toast.makeText(context.getApplicationContext(), componentSizes.size() + ": " + categoryItemList.length, Toast.LENGTH_SHORT).show();
+
         holder.iconName.setText(categoryItemList[position]);
-        holder.iconStorage.setText(categoryItemListSizes[position]);
+        holder.iconStorage.setText(componentSizes.get(position));
         Glide.with(context.getApplicationContext()).load(images[position]).into(holder.icon);
 
         holder.folderItemMain.setOnClickListener(new View.OnClickListener() {
@@ -264,12 +258,18 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void installedApps() {
         List<PackageInfo> packList = context.getPackageManager().getInstalledPackages(0);
         for (int i = 0; i < packList.size(); i++) {
             PackageInfo packInfo = packList.get(i);
+
+
+
             if ((packInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
                 String appName = packInfo.applicationInfo.loadLabel(context.getPackageManager()).toString();
+
+//                Method getPackageSizeInfo = pm.getClass().getMethod("getPackageSizeInfo", String.class, IPackageStatsObserver.class);
 
 //                PackageInfo bnb = packInfo.packageName;
 
@@ -277,11 +277,116 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
 //                packInfo.applicationInfo.loadLabel(getPackageManager()).toString();
                 packageInfos.add(packInfo);
 //                mainCompModelList.get(i).getPackageInfoList().add(packInfo);
+
+
+                final PackageManager pm = context.getPackageManager();
+                List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+
+                for (ApplicationInfo packageInfo : packages) {
+                        getPackageSizeInfo(context.getApplicationContext(),packageInfo.packageName);
+                }
+
                 Log.e("App № " + Integer.toString(i), appName + " " + i);
             }
         }
     }
 
+    private void getPackageSizeInfo(final Context context, String packageName) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            final StorageStatsManager storageStatsManager = (StorageStatsManager) context.getSystemService(Context.STORAGE_STATS_SERVICE);
+            final StorageManager storageManager = (StorageManager)  context.getSystemService(Context.STORAGE_SERVICE);
+            try {
+
+                ApplicationInfo ai = context.getApplicationContext().getPackageManager().getApplicationInfo(packageName, 0);
+                StorageStats storageStats = storageStatsManager.queryStatsForUid(ai.storageUuid, context.getApplicationContext().getApplicationInfo().uid);
+                long cacheSize = storageStats.getCacheBytes();
+                long dataSize = storageStats.getDataBytes();
+                long apkSize = storageStats.getAppBytes();
+
+                PackageStats packageStats = new PackageStats(packageName);
+                packageStats.cacheSize = cacheSize;
+                packageStats.dataSize = dataSize;
+                packageStats.codeSize = apkSize;
+                Log.e("LAG" ,""+apkSize);
+//                observer.onGetStatsCompleted(packageStats, true);
+                //long size += info.cacheSize;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else  {
+            Method getPackageSizeInfo;
+            try {
+                getPackageSizeInfo = context.getPackageManager().getClass()
+                        .getMethod("getPackageSizeInfo",
+                                String.class, Class.forName("android.content.pm.IPackageStatsObserver"));
+
+                getPackageSizeInfo.invoke(context.getPackageManager(), packageName,
+                        new IPackageStatsObserver.Stub() { //error
+
+                            public void onGetStatsCompleted(
+                                    PackageStats pStats, boolean succeeded)
+                                    throws RemoteException {
+
+                                //totalSize = totalSize + pStats.cacheSize;
+                                //Log.d("size", totalSize+"");
+                                Toast.makeText( context.getApplicationContext(), "size"+pStats.cacheSize + ",," + pStats.dataSize + ",," + pStats.codeSize, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                );
+            } catch (Exception e) {
+                try {
+                    getPackageSizeInfo = context.getPackageManager().getClass()
+                            .getMethod("getPackageSizeInfo",
+                                    String.class, Class.forName("android.content.pm.IPackageStatsObserver"));
+
+                    getPackageSizeInfo.invoke(context.getPackageManager(), packageName,
+                            new IPackageStatsObserver.Stub() { //error
+
+                                public void onGetStatsCompleted(
+                                        PackageStats pStats, boolean succeeded)
+                                        throws RemoteException {
+                                    Toast.makeText( context.getApplicationContext(), "size"+pStats.cacheSize, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                    );
+                } catch (Exception ee) {
+                    Log.d("eeeeeeeeeee", "error");
+                    ee.printStackTrace();
+                }
+            }
+        }
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.Q)
+    public void explodeC() {
+        ContentResolver contentResolver = context.getApplicationContext().getContentResolver();
+        Uri uriDownloads = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+        Cursor cursor = contentResolver.query(uriDownloads, null, null, null, null);
+
+        long daaa = 0;
+
+        if (cursor != null && cursor.getCount() > 0) {
+            while (cursor.moveToNext()) {
+
+                String data = cursor.getString(Integer.parseInt(String.valueOf(cursor.getColumnIndex(MediaStore.Downloads.DATA))));
+                String dataSize = cursor.getString(Integer.parseInt(String.valueOf(cursor.getColumnIndex(MediaStore.Downloads.SIZE))));
+//                long dataSizes = Long.parseLong(dataSize);
+
+                File dFiles = new File(data);
+                if (!(dFiles.isDirectory())) {
+                    daaa += Long.parseLong(dataSize);
+//                    Log.d("MainIntentPath ", "Data " + data);
+                    valPaths.add(data);
+                }
+//                Log.d("Intent Path ", "Data " + Formatter.formatFileSize(getApplicationContext(), sizee));
+            }
+
+            Log.d("MMIntent Path ", "Data " + Formatter.formatFileSize(context.getApplicationContext(), daaa));
+            cursor.close();
+
+        }
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     private void loadContents(String contentTitles) {
@@ -328,25 +433,27 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
             } else {
                 selectionArgsPdf = new String[]{mimeType};
             }
-            String[] projection = {MediaStore.MediaColumns.DATA};
+            String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.MediaColumns.SIZE};
             String sortOrder = null;
 
             Cursor cursor = contentResolver.query(uri, projection, selectionMimeType, selectionArgsPdf, sortOrder);
 
-//        long sizee = 0;
+            long sizee = 0;
 
             if (cursor != null && cursor.getCount() > 0) {
                 while (cursor.moveToNext()) {
                     String data = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
-                    Log.d("Intent Path ", "Data " + data);
+                    String dataSizes = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE));
+                    Log.d("MainIntentPath ", "Data " + data);
+//                    File [] datas = data
                     valPaths.add(data);
 //                    mainCompModelList.get(i).setPathList(va);
 //                    valPaths = new String[]{data};
 //                    Log.d("Intent Path ", "Vall" + cursor.getString(cursor.getColumnIndexOrThrow(projection[0])));
-//                sizee += Long.parseLong(data);
+                    sizee += Long.parseLong(dataSizes);
                 }
 //                Log.d("Intent Path ", "Vall" + cursor.getString(cursor.getColumnName(0));
-
+                Log.d("MMIntent Path ", "Data " + Formatter.formatFileSize(context.getApplicationContext(), sizee));
                 cursor.close();
             }
         }

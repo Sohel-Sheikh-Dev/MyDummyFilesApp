@@ -52,7 +52,7 @@ public class DirAdapter extends RecyclerView.Adapter<DirAdapter.ViewHolder> {
                 Toast.makeText(context.getApplicationContext(), "It is a directory", Toast.LENGTH_SHORT).show();
 
 
-                ListFiles activity = (ListFiles) context;
+                CopyMoveToScreen activity = (CopyMoveToScreen) context;
                 CMFrag cmFrag = new CMFrag();
                 clickedPath = dirFiles[pos].toString();
 
@@ -60,7 +60,7 @@ public class DirAdapter extends RecyclerView.Adapter<DirAdapter.ViewHolder> {
                 bundle.putString("message", clickedPath);
 //                CMFrag cmFrag = new CMFrag();
                 cmFrag.setArguments(bundle);
-                activity.getSupportFragmentManager().beginTransaction().replace(R.id.full,cmFrag).addToBackStack(null).commit();
+                activity.getSupportFragmentManager().beginTransaction().replace(R.id.copyMoveScreen,cmFrag).addToBackStack(null).commit();
 
 
 //                Intent intent = new Intent(context.getApplicationContext(), ListDirectories.class);
